@@ -13,10 +13,11 @@ AC_PROG_CXX
 # Checks for libraries.
 AC_CHECK_LIB([resolv], [ns_name_uncompress])
 AC_CHECK_LIB([rt], [clock_gettime])
+AC_CHECK_LIB([ldns], [ldns_wire2pkt], [], [AC_MSG_ERROR([ldns library not found])])
 
 # Checks for header files.
 AC_HEADER_RESOLV
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h memory.h sys/socket.h syslog.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h memory.h sys/socket.h syslog.h unistd.h ldns/ldns.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
