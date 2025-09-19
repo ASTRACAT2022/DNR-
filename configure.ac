@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.68])
 AC_INIT([DNR], [0.1], [bug-report@example.com])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall foreign])
 AC_CONFIG_SRCDIR([src/DNR.cpp])
 AC_CONFIG_HEADERS([config.h])
 
