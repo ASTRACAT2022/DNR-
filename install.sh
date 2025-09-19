@@ -12,13 +12,41 @@ fi
 
 echo "--- Автоматический установщик ASTRACAT DNR ---"
 
+# --- Начало исправления для неработающего репозитория ---
+RESTORE_APT_SOURCES=false
+SOURCES_FILE="/etc/apt/sources.list"
+# Проверяем, существует ли файл и содержит ли он проблемную строку
+if [ -f "$SOURCES_FILE" ] && grep -q "repo.powerdns.com/ubuntu" "$SOURCES_FILE"; then
+    echo "Обнаружен потенциально неработающий репозиторий PowerDNS. Временно отключаю его на время установки..."
+    # Комментируем проблемную строку и создаем резервную копию
+    sed -i.bak '/repo.powerdns.com\/ubuntu/s/^/#/' "$SOURCES_FILE"
+    RESTORE_APT_SOURCES=true
+    echo "Резервная копия оригинального файла создана: $SOURCES_FILE.bak"
+fi
+# --- Конец исправления ---
+
 # 1. Установка зависимостей
 echo "[1/5] Установка необходимых пакетов (build-essential, libldns-dev)..."
 if ! command -v apt-get &> /dev/null; then
     echo "Ошибка: apt-get не найден. Этот скрипт предназначен для Debian-подобных систем (Ubuntu, Mint и т.д.)."
+    # Восстанавливаем файл sources.list, если он был изменен
+    if [ "$RESTORE_APT_SOURCES" = true ]; then
+        mv "$SOURCES_FILE.bak" "$SOURCES_FILE"
+    fi
     exit 1
 fi
-apt-get update
+
+# Запускаем apt-get update и обрабатываем возможную ошибку
+if ! apt-get update; then
+    echo "Ошибка при выполнении apt-get update. Возможно, проблемы с другими репозиториями."
+    # Восстанавливаем файл sources.list, если он был изменен
+    if [ "$RESTORE_APT_SOURCES" = true ]; then
+        echo "Восстановление оригинального файла /etc/apt/sources.list..."
+        mv "$SOURCES_FILE.bak" "$SOURCES_FILE"
+    fi
+    exit 1
+fi
+
 apt-get install -y build-essential libc6-dev libldns-dev autoconf automake libtool
 
 # 2. Подготовка сборочного окружения
@@ -49,20 +77,10 @@ After=network.target
 
 [Service]
 Type=simple
-# Для безопасности рекомендуется запускать сервис от имени непривилегированного пользователя.
-# Создайте пользователя: useradd --system --no-create-home --shell /bin/false dnr
-# И раскомментируйте следующие строки:
-# User=dnr
-# Group=dnr
 User=root
 Group=root
-
-# Примечание: Порт 53 требует прав root или CAP_NET_BIND_SERVICE.
-# В этом примере используется порт 5353. Вы можете изменить его при необходимости.
 ExecStart=/usr/local/bin/DNR -p 5353
 Restart=on-failure
-
-# Конфигурация логирования
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=dnr
@@ -74,6 +92,14 @@ EOF
 # Перезагрузка конфигурации systemd для распознавания нового сервиса
 systemctl daemon-reload
 
+# --- Начало восстановления sources.list ---
+if [ "$RESTORE_APT_SOURCES" = true ]; then
+    echo "Восстановление оригинального файла /etc/apt/sources.list..."
+    mv "$SOURCES_FILE.bak" "$SOURCES_FILE"
+    echo "Файл восстановлен."
+fi
+# --- Конец восстановления ---
+
 echo
 echo "--- Установка завершена! ---"
 echo
@@ -81,10 +107,10 @@ echo "Бинарный файл 'DNR' был установлен в /usr/local/
 echo "Файл сервиса systemd был создан в /etc/systemd/system/dnr.service"
 echo
 echo "Для управления сервисом вы можете использовать следующие команды:"
-echo "  sudo systemctl start dnr.service    # Запустить сервис"
-echo "  sudo systemctl enable dnr.service   # Включить автозапуск при загрузке системы"
-echo "  sudo systemctl status dnr.service   # Проверить статус сервиса"
-echo "  sudo systemctl stop dnr.service     # Остановить сервис"
-echo "  sudo journalctl -u dnr.service -f   # Просматривать логи в реальном времени"
+echo "  sudo systemctl start dnr.service"
+echo "  sudo systemctl enable dnr.service"
+echo "  sudo systemctl status dnr.service"
+echo "  sudo systemctl stop dnr.service"
+echo "  sudo journalctl -u dnr.service -f"
 echo
-echo "По умолчанию сервис настроен на работу на порту 5353. Вы можете отредактировать файл сервиса, чтобы изменить порт или другие параметры."
+echo "По умолчанию сервис настроен на работу на порту 5353."
