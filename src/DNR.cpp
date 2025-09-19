@@ -1,12 +1,7 @@
 #include <ctime>  // Для функции time()
 #include <time.h> // Для clock_gettime и CLOCK_MONOTONIC
 #include <stdio.h>
-extern "C" {
 #include <resolv.h>
-#include <ldns/ldns.h>
-#include <ldns/edns.h>
-#include <openssl/ssl.h>
-}
 #include <memory.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -110,7 +105,6 @@ struct request_entry {
 	std::list<remote_source> rlist;
 	std::map<question_entry, local_source> llist;
 	bool use_cache;
-	bool ad_flag; // To store the AD bit from upstream responses
 };
 std::map<question_entry, cache_entry> cache_map;
 std::map<time_t, std::set<cache_entry*> > cache_expiry_map;
@@ -149,11 +143,11 @@ bool create_socket(int& fd, sockaddr_in* addr);
 void init_root();
 void handle_signal(int signal);
 bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scope, std::map<question_entry, cache_entry>& entries, unsigned short& rrtype);
-void handle_response(ns_msg& handle, const sockaddr_in& addr, const unsigned char* data, int data_len);
+void handle_response(ns_msg& handle, const sockaddr_in& addr);
 bool add_request(const question_entry& question, const question_entry* oq, unsigned int progress, const sockaddr_in* addr, const in_addr* local_addr, unsigned int ifindex, unsigned short id,  bool need_answer, bool use_cache, request_entry*& pentry);
 void handle_request(ns_msg& handle, const sockaddr_in& addr, const in_addr& local_addr, unsigned int ifindex);
 void handle_packet(msghdr *msg, int size, bool local);
-void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, bool ad_flag);
+void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc);
 void send_packet(const sockaddr_in& addr, unsigned short id, const in_addr* local_addr, unsigned int ifindex, bool local);
 bool get_answer(question_entry& question, std::vector<resource_entry>& rr, bool use_cache);
 unsigned short add_additional_answer(std::vector<resource_entry>& rr);
@@ -394,15 +388,7 @@ bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scop
 	cache.rrs.push_back(r);
 	return true;
 }
-void handle_response(ns_msg& handle, const sockaddr_in& addr, const unsigned char* data, int data_len) {
-	ldns_pkt *pkt = NULL;
-    ldns_status status = ldns_wire2pkt(&pkt, data, data_len);
-    bool ad_flag = false;
-    if (status == LDNS_STATUS_OK) {
-        ad_flag = ldns_pkt_ad(pkt);
-        ldns_pkt_free(pkt);
-    }
-
+void handle_response(ns_msg& handle, const sockaddr_in& addr) {
 	ns_rr rr;
 	question_entry question;
 	question_entry cnq;
@@ -412,6 +398,8 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr, const unsigned cha
 	std::map<question_entry, cache_entry> entries;
 	ss.rx_response++;
 	if (ns_parserr(&handle, ns_s_qd, 0, &rr) < 0) {
+		// Уровень детализации удален
+		// if (verbose >= 1) syslog(LOG_INFO, "Failed to parse the first question in packet received from %s", remote_addr);
 		return;
 	}
 	rcode = ns_msg_getflag(handle, ns_f_rcode);
@@ -422,39 +410,56 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr, const unsigned cha
 	std::transform(question.qname.begin(), question.qname.end(), question.qname.begin(), ::tolower);
 	cnq = question;
 	cnq.qtype = T_CNAME;
-
+	// check result
 	if (rcode != NXDOMAIN && rcode != NOERROR) {
+		// Уровень детализации удален
+		// if (verbose >= 2) syslog(LOG_INFO, "Drop packet with unsupported rcode %d received from %s", rcode, remote_addr);
 		return;
 	}
-
+	// then check sender
 	if (request_map.count(question) == 0) return;
 	request_entry& request = request_map[question];
 	if (request.ns.addrs.count(addr) == 0) return;
 	if (id != request.ns.addrs[addr]) return;
-
-	request.ad_flag = ad_flag;
-
+	// Уровень детализации удален
+	// if (verbose >= 3) syslog(LOG_DEBUG, "Received response %d for question %s, %d, %d from %s", request.progress, question.qname.c_str(), question.qclass, question.qtype, remote_addr);
+	// first add the answer to cache
 	bool no_answer = true;
 	for (int i=0;i < ns_msg_count(handle, ns_s_an); i++) {
-		if (ns_parserr(&handle, ns_s_an, i, &rr) < 0) return;
+		if (ns_parserr(&handle, ns_s_an, i, &rr) < 0) {
+			// Уровень детализации удален
+			// if (verbose >= 1) syslog(LOG_INFO, "Failed to parse the number %d answer in packet received from %s", i, remote_addr);
+			return;
+		}
 		add_response_cache_entry(handle, rr, request.ns.scope, entries, rrtype);
 	}
 	if (entries.count(question) != 0 || entries.count(cnq) != 0) no_answer = false;
 	bool no_ns, no_soa;
 	no_ns = no_soa = true;
+	// then add authoritative nameservers
 	for (int i=0;i < ns_msg_count(handle, ns_s_ns); i++) {
-		if (ns_parserr(&handle, ns_s_ns, i, &rr) < 0) return;
+		if (ns_parserr(&handle, ns_s_ns, i, &rr) < 0) {
+			// Уровень детализации удален
+			// if (verbose >= 1) syslog(LOG_INFO, "Failed to parse number %d authoritative record in packet received from %s", i, remote_addr);
+			return;
+		}
 		add_response_cache_entry(handle, rr, request.ns.scope, entries, rrtype);
 		if (rrtype == T_NS) no_ns = false;
 		else if (rrtype == T_SOA) no_soa = false;
 	}
+	// last, additional records
 	for (int i=0;i < ns_msg_count(handle, ns_s_ar); i++) {
-		if (ns_parserr(&handle, ns_s_ar, i, &rr) < 0) return;
+		if (ns_parserr(&handle, ns_s_ar, i, &rr) < 0) {
+			// Уровень детализации удален
+			// if (verbose >= 1) syslog(LOG_INFO, "Failed to parse number %d additional record in packet received from %s", i, remote_addr);
+			return;
+		}
 		add_response_cache_entry(handle, rr, request.ns.scope, entries, rrtype);
 	}
 	bool no_more_data = no_soa == false || (no_ns && no_answer);
 	bool no_domain = rcode == NXDOMAIN;
 	for (std::map<question_entry, cache_entry>::iterator it = entries.begin(); it != entries.end(); ++it) {
+		// find the least expiry time;
 		cache_entry& tmp_cache = it->second;
 		tmp_cache.least_expiry = 0;
 		for (std::list<resource_entry>::iterator itr = tmp_cache.rrs.begin(); itr != tmp_cache.rrs.end(); ++itr) {
@@ -462,6 +467,7 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr, const unsigned cha
 			if (tmp_cache.least_expiry == 0 || tmp_cache.least_expiry > r.rexpiry) tmp_cache.least_expiry = r.rexpiry;
 		}
 		assert(tmp_cache.least_expiry != 0);
+		// first delete the old cache_map
 		if (cache_map.count(tmp_cache.question) != 0) {
 			cache_entry& old_cache = cache_map[tmp_cache.question];
 			if (old_cache.least_expiry > tmp_cache.least_expiry) continue;
@@ -473,10 +479,13 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr, const unsigned cha
 			ss.cache_replaced++;
 		}
 		else ss.cache_added++;
+		// then add entry to cache_map
 		cache_map[tmp_cache.question] = tmp_cache;
+		// last, add entry to cache_expiry_map
 		cache_expiry_map[tmp_cache.least_expiry].insert(&cache_map[tmp_cache.question]);
 		if (cache_map.size() > ss.cache_max) ss.cache_max = cache_map.size();
 	}
+	// try complete request
 	assert(request.nq.qclass == request.question.qclass);
 	assert(request.nq.qtype == request.question.qtype);
 	assert(request.nq.qname == request.question.qname);
@@ -498,7 +507,6 @@ bool add_request(const question_entry& question, const question_entry* oq, unsig
 		request.lastsend.tv_nsec = 0;
 		request.retry = 0;
 		request.use_cache = use_cache;
-		request.ad_flag = false;
 		request_map[question] = request;
 		pentry = &request_map[question];
 		// and request_expiry_map
@@ -578,7 +586,7 @@ void handle_packet(msghdr *msg, int size, bool local) {
 		if (cmptr) handle_request(handle, *(sockaddr_in*)(msg->msg_name), local_addr, ifindex);
 		else syslog(LOG_WARNING, "Unable to get in_pktinfo in packet received from %s", remote_addr);
 	}
-	else handle_response(handle, *(sockaddr_in*)(msg->msg_name), recvbuf, size);
+	else handle_response(handle, *(sockaddr_in*)(msg->msg_name));
 }
 bool get_answer(question_entry& question, std::vector<resource_entry>& rr, bool use_cache) {
 	bool walking = true;
@@ -702,7 +710,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			ss.tx_response++;
 			// Уровень детализации удален
 			// if (verbose >= 3) syslog(LOG_DEBUG, "Send answer to remote %d", it->id);
-			if (it == request.rlist.begin()) build_packet(false, no_domain, request.question, &request.anrr, adrrc, request.ad_flag);
+			if (it == request.rlist.begin()) build_packet(false, no_domain, request.question, &request.anrr, adrrc);
 			send_packet(it->addr, it->id, &(it->local_addr), it->ifindex, true);
 		}
 		for (std::map<question_entry, local_source>::iterator it = tmp_llist.begin(); it != tmp_llist.end(); ++it) {
@@ -748,7 +756,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			++request.progress;
 			request.ns.addrs.clear();
 		}
-		build_packet(true, false, request.question, NULL, 0, false);
+		build_packet(true, false, request.question, NULL, 0);
 		bool update_lastsend = false;
 		for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
 			if (request.ns.addrs.count(it->first) != 0) continue;
@@ -843,7 +851,7 @@ void send_packet(const sockaddr_in& addr, unsigned short id, const in_addr* loca
 		break;
 	}
 }
-void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, bool ad_flag) {
+void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc) {
 	HEADER *ph = (HEADER *)sendbuf;
 	const unsigned char *dnptrs[RESPONSE_MAX_ANSWER_RR+2], **lastdnptr;
 	unsigned short *prsize;
@@ -855,37 +863,34 @@ void build_packet(bool query, bool no_domain, const question_entry& question, co
 	dnptrs[0]=sendbuf;
 	dnptrs[1]=NULL;
 	ph->qr = !query;
-	ph->rd = query; // Set RD bit for queries
-	ph->ra = !query; // Set RA bit for responses
-	ph->ad = ad_flag; // Set AD bit based on validation result
-	ph->rcode = no_domain ? NXDOMAIN : NOERROR;
-
-	// Build question section
-	if (psend - pspos < QFIXEDSZ) return;
-	if ((n = ns_name_compress(question.qname.c_str(), pspos, psend - pspos - QFIXEDSZ, dnptrs, lastdnptr)) < 0) return;
+	// Отключено рекурсивное разрешение по умолчанию, так как нет опции -r
+	ph->rd = query ? false : false;
+	ph->ra = query ? false : true;
+	ph->rcode = no_domain? NXDOMAIN : NOERROR;
+	if (psend - pspos < QFIXEDSZ) {
+		// Уровень детализации удален
+		// if (verbose >= 2) syslog(LOG_INFO, "Not enough fixed buff to build question: %s, %d, %d", question.qname.c_str(), question.qclass, question.qtype);
+		return;
+	}
+	if ((n = ns_name_compress(question.qname.c_str(), pspos, psend - pspos - QFIXEDSZ, dnptrs, lastdnptr)) < 0) {
+		// Уровень детализации удален
+		// if (verbose >= 2) syslog(LOG_INFO, "Not enough buff to build question: %s, %d, %d", question.qname.c_str(), question.qclass, question.qtype);
+		return;
+	}
 	pspos += n;
 	ns_put16(question.qtype, pspos);	pspos += INT16SZ;
 	ns_put16(question.qclass, pspos);	pspos += INT16SZ;
 	ph->qdcount = htons(1);
-
-	// If it's a query, add EDNS(0) OPT record for DNSSEC
-	if (query) {
-		*pspos++ = 0; // Root domain for OPT name
-		ns_put16(LDNS_RR_TYPE_OPT, pspos); pspos += INT16SZ;
-		ns_put16(4096, pspos); pspos += INT16SZ; // UDP payload size
-		*pspos++ = 0; // extended RCODE
-		*pspos++ = 0; // EDNS version
-		ns_put16(0x8000, pspos); pspos += INT16SZ; // Set DO bit (value of LDNS_EDNS_DO)
-		ns_put16(0, pspos); pspos += INT16SZ; // RDLEN = 0
-		ph->arcount = htons(ntohs(ph->arcount) + 1);
-	}
-
 	for (int i = 0; anrr && i < (int)anrr->size() && i < RESPONSE_MAX_ANSWER_RR;) {
 		const resource_entry& r = (*anrr)[i];
 		if (psend - pspos < RRFIXEDSZ) {
+			// Уровень детализации удален
+			// if (verbose >= 2) syslog(LOG_INFO, "Not enough fixed buff to build answer %d for question: %s, %d, %d", i, question.qname.c_str(), question.qclass, question.qtype);
 			return;
 		}
 		if ((n = ns_name_compress(r.rq.qname.c_str(), pspos, psend - pspos - RRFIXEDSZ, dnptrs, lastdnptr)) < 0) {
+			// Уровень детализации удален
+			// if (verbose >= 2) syslog(LOG_INFO, "Not enough buff to build answer %d for question: %s, %d, %d", i, question.qname.c_str(), question.qclass, question.qtype);
 			return;
 		}
 		pspos += n;
@@ -897,6 +902,8 @@ void build_packet(bool query, bool no_domain, const question_entry& question, co
 		switch (r.rq.qtype) {
 		case T_MX:
 			if (psend - pspos < INT16SZ) {
+				// Уровень детализации удален
+				// if (verbose >= 2) syslog(LOG_INFO, "Not enough fixed buff to build MX answer %d for question: %s, %d, %d", i, question.qname.c_str(), question.qclass, question.qtype);
 				return;
 			}
 			ns_put16(r.rperf, pspos);	pspos += INT16SZ;		rsize += INT16SZ;
@@ -904,6 +911,8 @@ void build_packet(bool query, bool no_domain, const question_entry& question, co
 		case T_CNAME:
 		case T_PTR:
 			if ((n = ns_name_compress(r.rdata.c_str(), pspos, psend - pspos, dnptrs, lastdnptr)) < 0) {
+				// Уровень детализации удален
+				// if (verbose >= 2) syslog(LOG_INFO, "Failed to compress domain name %s in answer %d(rtype %d) for question: %s, %d, %d", r.rdata.c_str(), i, r.rq.qtype, question.qname.c_str(), question.qclass, question.qtype);
 				return;
 			}
 			pspos += n;
@@ -913,6 +922,8 @@ void build_packet(bool query, bool no_domain, const question_entry& question, co
 		case T_A:
 		case T_AAAA:
 			if (psend - pspos < (int)r.rdata.size()) {
+				// Уровень детализации удален
+				// if (verbose >= 2) syslog(LOG_INFO, "Not enough buff to build answer %d(rtype %d, rsize %d) for question: %s, %d, %d", i, r.rq.qtype, (int)r.rdata.size(), question.qname.c_str(), question.qclass, question.qtype);
 				return;
 			}
 			memcpy(pspos, r.rdata.c_str(), r.rdata.size());
@@ -920,6 +931,8 @@ void build_packet(bool query, bool no_domain, const question_entry& question, co
 			rsize += r.rdata.size();
 			break;
 		default:
+			// Уровень детализации удален
+			// if (verbose >= 1) syslog(LOG_NOTICE, "Failed to build answer %d(unsupported rtype %d) for question: %s, %d, %d", i, r.rq.qtype, question.qname.c_str(), question.qclass, question.qtype);
 			return;
 		}
 		*prsize = htons(rsize);
@@ -956,7 +969,7 @@ void check_expiry() {
 		assert(r->ns.addrs.size() != 0);
 		assert(r->retry < query_retry);
 		ss.query_retry++;
-		build_packet(true, false, r->question, NULL, 0, false);
+		build_packet(true, false, r->question, NULL, 0);
 		for (std::map<sockaddr_in, unsigned short>::iterator its = r->ns.addrs.begin(); its != r->ns.addrs.end(); ++its) {
 			ss.tx_query++;
 			// Уровень детализации удален
