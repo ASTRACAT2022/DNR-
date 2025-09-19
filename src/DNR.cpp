@@ -412,7 +412,36 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr) {
 	cnq.qtype = T_CNAME;
 	// check result
 	if (rcode != NXDOMAIN && rcode != NOERROR) {
-		// Уровень детализации удален
+		if (rcode == ns_r_servfail) { // Handle SERVFAIL
+			if (request_map.count(question) == 0) return;
+			request_entry& request = request_map[question];
+			if (request.ns.addrs.count(addr) == 0) return;
+			if (id != request.ns.addrs[addr]) return;
+
+			// Build and send SERVFAIL to all original requesters
+			for (std::list<remote_source>::iterator it = request.rlist.begin(); it != request.rlist.end(); ++it) {
+				build_packet(false, false, request.question, NULL, 0); // build a basic response
+				HEADER *ph = (HEADER *)sendbuf;
+				ph->rcode = ns_r_servfail; // set rcode to SERVFAIL
+				send_packet(it->addr, it->id, &(it->local_addr), it->ifindex, true);
+				ss.tx_response++;
+			}
+
+			// Clean up the request
+			// This logic is simplified from try_complete_request
+			if (request_expiry_map.count(request.rexpiry) != 0) {
+				if (request_expiry_map[request.rexpiry].count(&request) != 0) {
+					request_expiry_map[request.rexpiry].erase(&request);
+					if (request_expiry_map[request.rexpiry].size() == 0) {
+						request_expiry_map.erase(request.rexpiry);
+					}
+				}
+			}
+			update_request_lastsend(request, false, true);
+			request_map.erase(request.question);
+
+			ss.rx_response_accepted++;
+		}
 		// if (verbose >= 2) syslog(LOG_INFO, "Drop packet with unsupported rcode %d received from %s", rcode, remote_addr);
 		return;
 	}

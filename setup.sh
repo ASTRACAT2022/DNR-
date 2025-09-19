@@ -10,16 +10,18 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-echo "--- Автоматический установщик ASTRACAT DNR ---"
+echo "--- Автоматический установщик ASTRACAT DNR (DNR) ---"
+echo "Этот скрипт соберет и установит DNS-сервер astracat-dns."
 
 # 1. Установка зависимостей
-echo "[1/5] Установка необходимых пакетов (build-essential, libldns-dev)..."
+echo "[1/5] Установка необходимых пакетов..."
 if ! command -v apt-get &> /dev/null; then
     echo "Ошибка: apt-get не найден. Этот скрипт предназначен для Debian-подобных систем (Ubuntu, Mint и т.д.)."
     exit 1
 fi
 apt-get update
-apt-get install -y build-essential libc6-dev libldns-dev autoconf automake libtool
+# libldns-dev не требуется для DNR, который использует libc для разрешения DNS.
+apt-get install -y build-essential libc6-dev autoconf automake libtool
 
 # 2. Подготовка сборочного окружения
 echo "[2/5] Запуск autoreconf для генерации скриптов сборки..."
