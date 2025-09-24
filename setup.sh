@@ -83,8 +83,8 @@ fi
 # Исправление пути в dnr.service
 echo "[7/6] Исправление пути в dnr.service..."
 
-# Удаляем старые строки и добавляем правильный ExecStart
-sed -i 's/^ExecStart=.*/ExecStart='"$BIN_PATH"'/' "$SERVICE_PATH"
+# Используем # в качестве разделителя, чтобы избежать конфликта с / в пути
+sed -i "s#^ExecStart=.*#ExecStart=${BIN_PATH}#" "$SERVICE_PATH"
 
 # Добавляем User и Group, если не указаны
 if ! grep -q "^User=" "$SERVICE_PATH"; then
