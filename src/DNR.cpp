@@ -89,6 +89,7 @@ struct remote_source {
 	unsigned int ifindex;
 	unsigned short id;	// id of original request
 	bool do_bit;
+	bool rd_bit;
 };
 struct local_source {
 	question_entry oq;
@@ -128,7 +129,7 @@ timespec now = {0,0};
 // options - значения по умолчанию
 bool dnssec_enabled = false; // По умолчанию DNSSEC отключен
 in_addr bind_address = { INADDR_ANY }; // Используем значение по умолчанию
-unsigned short bind_port = 53; // Значение по умолчанию, может быть изменено через -p
+unsigned short bind_port = 5353; // Значение по умолчанию, может быть изменено через -p
 // Остальные настройки используют значения по умолчанию из оригинального кода
 std::vector<std::string> custom_root; // Не используется, так как опция -r отсутствует
 time_t cache_update_ttl = 180;
@@ -149,10 +150,10 @@ void init_root();
 void handle_signal(int signal);
 bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scope, std::map<question_entry, cache_entry>& entries, unsigned short& rrtype);
 void handle_response(ns_msg& handle, const sockaddr_in& addr);
-bool add_request(const question_entry& question, const question_entry* oq, unsigned int progress, const sockaddr_in* addr, const in_addr* local_addr, unsigned int ifindex, unsigned short id,  bool need_answer, bool use_cache, request_entry*& pentry);
+bool add_request(const question_entry& question, const question_entry* oq, unsigned int progress, const sockaddr_in* addr, const in_addr* local_addr, unsigned int ifindex, unsigned short id,  bool do_bit, bool rd_bit, bool need_answer, bool use_cache, request_entry*& pentry);
 void handle_request(ns_msg& handle, const sockaddr_in& addr, const in_addr& local_addr, unsigned int ifindex);
 void handle_packet(msghdr *msg, int size, bool local);
-void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit);
+void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit, bool rd_bit = false);
 void send_packet(const sockaddr_in& addr, unsigned short id, const in_addr* local_addr, unsigned int ifindex, bool local);
 bool get_answer(question_entry& question, std::vector<resource_entry>& rr, bool use_cache);
 unsigned short add_additional_answer(std::vector<resource_entry>& rr);
@@ -191,8 +192,10 @@ void handle_signal(int signal) {
 	syslog(LOG_INFO, "Pending request   : %d", (int)request_map.size());
 }
 int main(int argc, char **argv) {
+	openlog("fastdns", LOG_PID|LOG_CONS|LOG_PERROR, LOG_USER);
+	syslog(LOG_INFO, "DNR starting up");
 	if (parse_option(argc, argv) == false) return -1;
-	openlog("fastdns", LOG_PID|LOG_CONS, LOG_USER);
+	syslog(LOG_INFO, "Options parsed");
 	srand(time(0));
 	memset(&ss, 0, sizeof(ss));
 	struct sockaddr_in addr;
@@ -201,8 +204,11 @@ int main(int argc, char **argv) {
 	addr.sin_addr = bind_address;
 	addr.sin_port = htons(bind_port);
 	if (create_socket(lfd, &addr) == false) return -1;
+	syslog(LOG_INFO, "Listening socket created");
 	if (create_socket(rfd, NULL) == false) return -1;
+	syslog(LOG_INFO, "Remote socket created");
 	init_root();
+	syslog(LOG_INFO, "Root hints initialized");
 	struct sigaction sa;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_handler = &handle_signal;
@@ -325,9 +331,19 @@ void init_root() {
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(53);
 	// Встроенный список корневых серверов (пример)
-	addr.sin_addr.s_addr = htonl(0x01010101);	root_addrs.addrs.insert(std::make_pair(addr, 0)); // one.one.one.one
-	addr.sin_addr.s_addr = htonl(0x08080808);	root_addrs.addrs.insert(std::make_pair(addr, 0)); // 8.8.8.8
-	addr.sin_addr.s_addr = htonl(0x08080404);	root_addrs.addrs.insert(std::make_pair(addr, 0)); // 8.8.4.4
+	addr.sin_addr.s_addr = inet_addr("198.41.0.4");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("199.9.14.201");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("192.33.4.12");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("199.7.91.13");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("192.203.230.10");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("192.5.5.241");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("192.112.36.4");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("198.97.190.53");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("192.36.148.17");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("192.58.128.30");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("193.0.14.129");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("199.7.83.42");	root_addrs.addrs.insert(std::make_pair(addr, 0));
+	addr.sin_addr.s_addr = inet_addr("202.12.27.33");	root_addrs.addrs.insert(std::make_pair(addr, 0));
 	// Добавьте больше серверов по необходимости
 }
 bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scope, std::map<question_entry, cache_entry>& entries, unsigned short& rrtype) {
@@ -501,7 +517,7 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr) {
 	try_complete_request(request, no_more_data, no_domain, request.progress);
 	ss.rx_response_accepted++;
 }
-bool add_request(const question_entry& question, const question_entry* oq, unsigned int progress, const sockaddr_in* addr, const in_addr* local_addr, unsigned int ifindex, unsigned short id, bool do_bit, bool need_answer, bool use_cache, request_entry*& pentry) {
+bool add_request(const question_entry& question, const question_entry* oq, unsigned int progress, const sockaddr_in* addr, const in_addr* local_addr, unsigned int ifindex, unsigned short id, bool do_bit, bool rd_bit, bool need_answer, bool use_cache, request_entry*& pentry) {
 	pentry = NULL;
 	bool missing = false;
 	// add request to request_map
@@ -539,6 +555,7 @@ bool add_request(const question_entry& question, const question_entry* oq, unsig
 		rs.ifindex = ifindex;
 		rs.id = id;
 		rs.do_bit = do_bit;
+		rs.rd_bit = rd_bit;
 		pentry->rlist.push_back(rs);
 	}
 	return missing;
@@ -574,7 +591,7 @@ void handle_request(ns_msg& handle, const sockaddr_in& addr, const in_addr& loca
 	// Уровень детализации удален
 	// if (verbose >= 3) syslog(LOG_DEBUG, "Received request %d for question %s, %d, %d from %s", ns_msg_id(handle), question.qname.c_str(), question.qclass, question.qtype, remote_addr);
 	request_entry* pentry;
-	if (add_request(question, NULL, 0, &addr, &local_addr, ifindex, ns_msg_id(handle), do_bit, true, true, pentry)) {
+	if (add_request(question, NULL, 0, &addr, &local_addr, ifindex, ns_msg_id(handle), do_bit, ns_msg_getflag(handle, ns_f_rd), true, true, pentry)) {
 		pentry->client_payload_size = client_payload_size;
 		try_complete_request(*pentry, false, false, pentry->progress);
 	}
@@ -739,7 +756,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			ss.tx_response++;
 			// Уровень детализации удален
 			// if (verbose >= 3) syslog(LOG_DEBUG, "Send answer to remote %d", it->id);
-			if (it == request.rlist.begin()) build_packet(false, no_domain, request.question, &request.anrr, adrrc, request.client_payload_size, it->do_bit);
+			if (it == request.rlist.begin()) build_packet(false, no_domain, request.question, &request.anrr, adrrc, request.client_payload_size, it->do_bit, it->rd_bit);
 			send_packet(it->addr, it->id, &(it->local_addr), it->ifindex, true);
 		}
 		for (std::map<question_entry, local_source>::iterator it = tmp_llist.begin(); it != tmp_llist.end(); ++it) {
@@ -775,10 +792,12 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 		request_entry* pentry;
 		// may already have answer in cache if use_cache was false
 		bool new_do_bit = false;
+		bool new_rd_bit = false;
 		if (!request.rlist.empty()) {
 			new_do_bit = request.rlist.front().do_bit;
+			new_rd_bit = request.rlist.front().rd_bit;
 		}
-		if (add_request(request.nq, &request.question, request.progress, NULL, NULL, 0, 0, new_do_bit, true, true, pentry)) return try_complete_request(*pentry, false, false, pentry->progress);
+		if (add_request(request.nq, &request.question, request.progress, NULL, NULL, 0, 0, new_do_bit, new_rd_bit, true, true, pentry)) return try_complete_request(*pentry, false, false, pentry->progress);
 		return false;
 	}
 	std::set<std::string> ns_with_no_addr;
@@ -789,7 +808,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			++request.progress;
 			request.ns.addrs.clear();
 		}
-		build_packet(true, false, request.question, NULL, 0, 0, false);
+		build_packet(true, false, request.question, NULL, 0, 0, false, true);
 		bool update_lastsend = false;
 		for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
 			if (request.ns.addrs.count(it->first) != 0) continue;
@@ -821,10 +840,12 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			// if (verbose >= 3) syslog(LOG_DEBUG, "Add new request %s, %d, %d to find A record of nameserver for request(%d) %s, %d, %d", nsq.qname.c_str(), nsq.qclass, nsq.qtype, request.progress, request.question.qname.c_str(), request.question.qclass, request.question.qtype);
 			request_entry* pentry;
 			bool new_do_bit = false;
+			bool new_rd_bit = false;
 			if (!request.rlist.empty()) {
 				new_do_bit = request.rlist.front().do_bit;
+				new_rd_bit = request.rlist.front().rd_bit;
 			}
-			if (add_request(nsq, &request.question, request.progress, NULL, NULL, 0, 0, new_do_bit, false, true, pentry)) reqs[nsq] = pentry->progress;
+			if (add_request(nsq, &request.question, request.progress, NULL, NULL, 0, 0, new_do_bit, new_rd_bit, false, true, pentry)) reqs[nsq] = pentry->progress;
 		}
 		for (std::map<question_entry, unsigned int>::iterator it = reqs.begin(); it != reqs.end(); ++it) {
 			if (request_map.count(it->first) == 0) continue;
@@ -888,7 +909,7 @@ void send_packet(const sockaddr_in& addr, unsigned short id, const in_addr* loca
 		break;
 	}
 }
-void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit) {
+void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit, bool rd_bit) {
 	HEADER *ph = (HEADER *)sendbuf;
 	const unsigned char *dnptrs[RESPONSE_MAX_ANSWER_RR+2], **lastdnptr;
 	unsigned short *prsize;
@@ -901,7 +922,7 @@ void build_packet(bool query, bool no_domain, const question_entry& question, co
 	dnptrs[1]=NULL;
 	ph->qr = !query;
 	// Отключено рекурсивное разрешение по умолчанию, так как нет опции -r
-	ph->rd = query ? false : false;
+	ph->rd = query ? true : rd_bit;
 	ph->ra = query ? false : true;
 	ph->rcode = no_domain? NXDOMAIN : NOERROR;
 	if (psend - pspos < QFIXEDSZ) {
@@ -1022,7 +1043,7 @@ void check_expiry() {
 		assert(r->ns.addrs.size() != 0);
 		assert(r->retry < query_retry);
 		ss.query_retry++;
-		build_packet(true, false, r->question, NULL, 0, 0, false);
+		build_packet(true, false, r->question, NULL, 0, 0, false, true);
 		for (std::map<sockaddr_in, unsigned short>::iterator its = r->ns.addrs.begin(); its != r->ns.addrs.end(); ++its) {
 			ss.tx_query++;
 			// Уровень детализации удален
@@ -1057,41 +1078,31 @@ void check_expiry() {
 			// if (verbose >= 3) syslog(LOG_DEBUG, "Refresh cache(%d) %s, %d, %d", (int)(centry->least_expiry - now.tv_sec), centry->question.qname.c_str(), centry->question.qclass, centry->question.qtype);
 			centry->last_update = now.tv_sec;
 			request_entry* rentry;
-			if (add_request(centry->question, NULL, 0, NULL, NULL, 0, 0, dnssec_enabled, false, false, rentry)) try_complete_request(*rentry, false, false, rentry->progress);
+			if (add_request(centry->question, NULL, 0, NULL, NULL, 0, 0, dnssec_enabled, true, false, false, rentry)) try_complete_request(*rentry, false, false, rentry->progress);
 		}
 		if (it->first <= now.tv_sec) cache_expiry_map.erase(it++);
 		else ++it;
 	}
 }
 bool parse_option(int argc, char **argv) {
-	int c;
-	// Упрощены опции до -p, -h
-	while ((c = getopt(argc, argv, "p:sh")) != -1) {
-		switch (c) {
-		// case 'b': // Удалено
-		// 	if (inet_aton(optarg, &bind_address) == 0) {
-        //         syslog(LOG_ERR, "Invalid bind address: %s", optarg);
-        //         return false;
-        //     }
-		// 	break;
-		case 'p':
-			bind_port = atoi(optarg);
-            if (bind_port == 0) {
-                syslog(LOG_ERR, "Invalid bind port: %s", optarg);
+    int c;
+    while ((c = getopt(argc, argv, "p:sh")) != -1) {
+        switch (c) {
+            case 'p':
+                bind_port = atoi(optarg);
+                if (bind_port == 0) {
+                    fprintf(stderr, "Invalid port number: %s\n", optarg);
+                    return false;
+                }
+                break;
+            case 's':
+                dnssec_enabled = true;
+                break;
+            case 'h':
+            default:
+                print_help();
                 return false;
-            }
-			break;
-		case 's':
-			dnssec_enabled = true;
-			break;
-		// case 'v': // Удалено
-		// 	verbose++;
-		// 	break;
-		case 'h':
-		default:
-			print_help();
-			return false; // Возвращаем false для выхода после показа справки
-		}
-	}
-	return true;
+        }
+    }
+    return true;
 }
