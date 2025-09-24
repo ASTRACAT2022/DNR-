@@ -110,6 +110,7 @@ struct request_entry {
 	std::map<question_entry, local_source> llist;
 	bool use_cache;
 	unsigned short client_payload_size;
+	unsigned short rcode;
 };
 std::map<question_entry, cache_entry> cache_map;
 std::map<time_t, std::set<cache_entry*> > cache_expiry_map;
@@ -129,7 +130,7 @@ timespec now = {0,0};
 // options - значения по умолчанию
 bool dnssec_enabled = false; // По умолчанию DNSSEC отключен
 in_addr bind_address = { INADDR_ANY }; // Используем значение по умолчанию
-unsigned short bind_port = 5353; // Значение по умолчанию, может быть изменено через -p
+unsigned short bind_port = 53; // Значение по умолчанию, может быть изменено через -p
 // Остальные настройки используют значения по умолчанию из оригинального кода
 std::vector<std::string> custom_root; // Не используется, так как опция -r отсутствует
 time_t cache_update_ttl = 180;
@@ -153,7 +154,7 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr);
 bool add_request(const question_entry& question, const question_entry* oq, unsigned int progress, const sockaddr_in* addr, const in_addr* local_addr, unsigned int ifindex, unsigned short id,  bool do_bit, bool rd_bit, bool need_answer, bool use_cache, request_entry*& pentry);
 void handle_request(ns_msg& handle, const sockaddr_in& addr, const in_addr& local_addr, unsigned int ifindex);
 void handle_packet(msghdr *msg, int size, bool local);
-void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit, bool rd_bit = false);
+void build_packet(bool query, unsigned short rcode, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit, bool rd_bit = false);
 void send_packet(const sockaddr_in& addr, unsigned short id, const in_addr* local_addr, unsigned int ifindex, bool local);
 bool get_answer(question_entry& question, std::vector<resource_entry>& rr, bool use_cache);
 unsigned short add_additional_answer(std::vector<resource_entry>& rr);
@@ -165,10 +166,9 @@ bool parse_option(int argc, char **argv);
 void print_help() {
 	// Минимальный вывод справки
 	printf("AstracatDNR - Simple recursive DNS server\n");
-	printf("Usage: fastdns [-p port] [-s] [-h]\n");
+	printf("Usage: fastdns [-p port] [-h]\n");
 	printf("Options:\n");
 	printf("  -p port     Port to listen on (default: 53)\n");
-	printf("  -s          Enable DNSSEC support\n");
 	printf("  -h          Show this help message\n");
 }
 void handle_signal(int signal) {
@@ -436,7 +436,11 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr) {
 	// check result
 	if (rcode != NXDOMAIN && rcode != NOERROR) {
 		if (rcode == ns_r_servfail) { // Handle SERVFAIL
-			return;
+			if (request_map.count(question)) {
+				request_entry& request = request_map[question];
+				request.rcode = ns_r_servfail;
+				try_complete_request(request, true, false, request.progress);
+			}
 		}
 		// if (verbose >= 2) syslog(LOG_INFO, "Drop packet with unsupported rcode %d received from %s", rcode, remote_addr);
 		return;
@@ -533,6 +537,7 @@ bool add_request(const question_entry& question, const question_entry* oq, unsig
 		request.retry = 0;
 		request.use_cache = use_cache;
 		request.client_payload_size = 0; // Will be updated later
+		request.rcode = ns_r_noerror;
 		request_map[question] = request;
 		pentry = &request_map[question];
 		// and request_expiry_map
@@ -756,7 +761,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			ss.tx_response++;
 			// Уровень детализации удален
 			// if (verbose >= 3) syslog(LOG_DEBUG, "Send answer to remote %d", it->id);
-			if (it == request.rlist.begin()) build_packet(false, no_domain, request.question, &request.anrr, adrrc, request.client_payload_size, it->do_bit, it->rd_bit);
+			if (it == request.rlist.begin()) build_packet(false, (request.rcode != ns_r_noerror) ? request.rcode : (no_domain ? NXDOMAIN : NOERROR), request.question, &request.anrr, adrrc, request.client_payload_size, it->do_bit, it->rd_bit);
 			send_packet(it->addr, it->id, &(it->local_addr), it->ifindex, true);
 		}
 		for (std::map<question_entry, local_source>::iterator it = tmp_llist.begin(); it != tmp_llist.end(); ++it) {
@@ -808,7 +813,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			++request.progress;
 			request.ns.addrs.clear();
 		}
-		build_packet(true, false, request.question, NULL, 0, 0, false, true);
+			build_packet(true, NOERROR, request.question, NULL, 0, 0, false, true);
 		bool update_lastsend = false;
 		for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
 			if (request.ns.addrs.count(it->first) != 0) continue;
@@ -909,7 +914,7 @@ void send_packet(const sockaddr_in& addr, unsigned short id, const in_addr* loca
 		break;
 	}
 }
-void build_packet(bool query, bool no_domain, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit, bool rd_bit) {
+void build_packet(bool query, unsigned short rcode, const question_entry& question, const std::vector<resource_entry>* anrr, unsigned short adrrc, unsigned short client_payload_size, bool do_bit, bool rd_bit) {
 	HEADER *ph = (HEADER *)sendbuf;
 	const unsigned char *dnptrs[RESPONSE_MAX_ANSWER_RR+2], **lastdnptr;
 	unsigned short *prsize;
@@ -924,7 +929,7 @@ void build_packet(bool query, bool no_domain, const question_entry& question, co
 	// Отключено рекурсивное разрешение по умолчанию, так как нет опции -r
 	ph->rd = query ? true : rd_bit;
 	ph->ra = query ? false : true;
-	ph->rcode = no_domain? NXDOMAIN : NOERROR;
+	ph->rcode = rcode;
 	if (psend - pspos < QFIXEDSZ) {
 		// Уровень детализации удален
 		// if (verbose >= 2) syslog(LOG_INFO, "Not enough fixed buff to build question: %s, %d, %d", question.qname.c_str(), question.qclass, question.qtype);
@@ -1043,7 +1048,7 @@ void check_expiry() {
 		assert(r->ns.addrs.size() != 0);
 		assert(r->retry < query_retry);
 		ss.query_retry++;
-		build_packet(true, false, r->question, NULL, 0, 0, false, true);
+		build_packet(true, NOERROR, r->question, NULL, 0, 0, false, true);
 		for (std::map<sockaddr_in, unsigned short>::iterator its = r->ns.addrs.begin(); its != r->ns.addrs.end(); ++its) {
 			ss.tx_query++;
 			// Уровень детализации удален
@@ -1086,7 +1091,7 @@ void check_expiry() {
 }
 bool parse_option(int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "p:sh")) != -1) {
+    while ((c = getopt(argc, argv, "p:h")) != -1) {
         switch (c) {
             case 'p':
                 bind_port = atoi(optarg);
@@ -1094,9 +1099,6 @@ bool parse_option(int argc, char **argv) {
                     fprintf(stderr, "Invalid port number: %s\n", optarg);
                     return false;
                 }
-                break;
-            case 's':
-                dnssec_enabled = true;
                 break;
             case 'h':
             default:
