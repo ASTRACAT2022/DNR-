@@ -425,29 +425,45 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr) {
 			if (request.ns.addrs.count(addr) == 0) return;
 			if (id != request.ns.addrs[addr]) return;
 
-			// Build and send SERVFAIL to all original requesters
-			for (std::list<remote_source>::iterator it = request.rlist.begin(); it != request.rlist.end(); ++it) {
-				build_packet(false, false, request.question, NULL, 0, request.client_payload_size, it->do_bit); // build a basic response
-				HEADER *ph = (HEADER *)sendbuf;
-				ph->rcode = ns_r_servfail; // set rcode to SERVFAIL
-				send_packet(it->addr, it->id, &(it->local_addr), it->ifindex, true);
-				ss.tx_response++;
-			}
+			// A nameserver returned SERVFAIL. Instead of giving up, we remove it
+			// from the list of servers for this request and try the others.
+			request.ns.addrs.erase(addr);
 
-			// Clean up the request
-			// This logic is simplified from try_complete_request
-			if (request_expiry_map.count(request.rexpiry) != 0) {
-				if (request_expiry_map[request.rexpiry].count(&request) != 0) {
-					request_expiry_map[request.rexpiry].erase(&request);
-					if (request_expiry_map[request.rexpiry].size() == 0) {
-						request_expiry_map.erase(request.rexpiry);
+			if (request.ns.addrs.empty()) {
+				// All nameservers for this query have failed. Now we give up and
+				// send a SERVFAIL response to the original client.
+				for (std::list<remote_source>::iterator it = request.rlist.begin(); it != request.rlist.end(); ++it) {
+					build_packet(false, false, request.question, NULL, 0, request.client_payload_size, it->do_bit);
+					HEADER *ph = (HEADER *)sendbuf;
+					ph->rcode = ns_r_servfail;
+					send_packet(it->addr, it->id, &(it->local_addr), it->ifindex, true);
+					ss.tx_response++;
+				}
+
+				// Clean up the completed (failed) request
+				if (request_expiry_map.count(request.rexpiry) != 0) {
+					if (request_expiry_map[request.rexpiry].count(&request) != 0) {
+						request_expiry_map[request.rexpiry].erase(&request);
+						if (request_expiry_map[request.rexpiry].size() == 0) {
+							request_expiry_map.erase(request.rexpiry);
+						}
 					}
 				}
+				update_request_lastsend(request, false, true);
+				request_map.erase(request.question);
+			} else {
+				// There are other nameservers to try. We will send the query to them immediately
+				// instead of waiting for a timeout.
+				build_packet(true, false, request.question, NULL, 0, 0, false);
+				for (std::map<sockaddr_in, unsigned short>::iterator it = request.ns.addrs.begin(); it != request.ns.addrs.end(); ++it) {
+					ss.tx_query++;
+					send_packet(it->first, it->second, NULL, 0, false);
+				}
+				update_request_lastsend(request, false, false);
 			}
-			update_request_lastsend(request, false, true);
-			request_map.erase(request.question);
 
 			ss.rx_response_accepted++;
+			return; // We have handled this response.
 		}
 		// if (verbose >= 2) syslog(LOG_INFO, "Drop packet with unsupported rcode %d received from %s", rcode, remote_addr);
 		return;
