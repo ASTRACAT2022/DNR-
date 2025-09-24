@@ -1,92 +1,83 @@
 #!/bin/bash
 
-# Скрипт для автоматической установки ASTRACAT DNR
+# Скрипт для автоматической сборки и установки ASTRACAT DNR
 # Выход при любой ошибке
 set -e
 
-# Проверка на наличие прав root
+# 1. Проверка на наличие прав root
 if [ "$(id -u)" -ne 0 ]; then
   echo "Этот скрипт должен быть запущен с правами root. Пожалуйста, используйте sudo." >&2
   exit 1
 fi
 
-echo "--- Автоматический установщик ASTRACAT DNR (DNR) ---"
-echo "Этот скрипт соберет и установит DNS-сервер astracat-dns."
+echo "--- Автоматический установщик ASTRACAT DNR ---"
+echo "Этот скрипт установит зависимости, соберет и установит DNS-сервер."
 
-# 1. Установка зависимостей
-echo "[1/5] Установка необходимых пакетов..."
-if ! command -v apt-get &> /dev/null; then
-    echo "Ошибка: apt-get не найден. Этот скрипт предназначен для Debian-подобных систем (Ubuntu, Mint и т.д.)."
+# 2. Определение и установка зависимостей
+echo "[1/6] Определение пакетного менеджера и установка зависимостей..."
+
+INSTALL_CMD=""
+PACKAGES=""
+
+if command -v apt-get &> /dev/null; then
+    INSTALL_CMD="apt-get install -y"
+    PACKAGES="build-essential autoconf automake libtool"
+    apt-get update
+elif command -v dnf &> /dev/null; then
+    INSTALL_CMD="dnf install -y"
+    PACKAGES="gcc-c++ make autoconf automake libtool glibc-devel"
+elif command -v yum &> /dev/null; then
+    INSTALL_CMD="yum install -y"
+    PACKAGES="gcc-c++ make autoconf automake libtool glibc-devel"
+else
+    echo "Ошибка: Не удалось найти поддерживаемый пакетный менеджер (apt-get, dnf, yum)."
+    echo "Пожалуйста, установите следующие пакеты вручную: build-essential (или эквивалент), autoconf, automake, libtool."
     exit 1
 fi
-apt-get update
-# libldns-dev не требуется для DNR, который использует libc для разрешения DNS.
-apt-get install -y build-essential libc6-dev autoconf automake libtool
 
-# 2. Подготовка сборочного окружения
-echo "[2/5] Запуск autoreconf для генерации скриптов сборки..."
+echo "Используется команда: $INSTALL_CMD $PACKAGES"
+$INSTALL_CMD $PACKAGES
+
+# 3. Генерация скриптов сборки
+echo "[2/6] Запуск autoreconf для генерации сборочных скриптов..."
+# Сначала очистим старые артефакты, если они есть
+if [ -f "Makefile" ]; then
+    make distclean || echo "Не удалось выполнить 'make distclean', но это не критично."
+fi
 autoreconf -fiv
 
-# 3. Конфигурация сборки
-echo "[3/5] Запуск ./configure для настройки проекта..."
-./configure
+# 4. Конфигурация проекта
+echo "[3/6] Запуск ./configure для настройки проекта..."
+# Устанавливаем бинарные файлы в /usr/local/bin, а сервис systemd в /lib/systemd/system
+./configure --prefix=/usr/local --with-systemdsystemunitdir=/lib/systemd/system
 
-# 4. Сборка проекта
-echo "[4/5] Запуск make для компиляции..."
+# 5. Сборка проекта
+echo "[4/6] Запуск make для компиляции..."
 make
 
-# 5. Установка бинарного файла и сервиса
-echo "[5/5] Установка бинарного файла DNR и сервиса systemd..."
+# 6. Установка проекта
+echo "[5/6] Запуск 'make install' для установки бинарного файла и сервиса..."
+make install
 
-# Установка бинарного файла в /usr/local/bin
-install -m 755 src/DNR /usr/local/bin/DNR
-
-# Создание файла сервиса systemd
-SERVICE_FILE="/etc/systemd/system/dnr.service"
-echo "Создание файла сервиса systemd: $SERVICE_FILE..."
-cat > "$SERVICE_FILE" << EOF
-[Unit]
-Description=ASTRACAT DNR Recursive DNS Server
-After=network.target
-
-[Service]
-Type=simple
-# Для безопасности рекомендуется запускать сервис от имени непривилегированного пользователя.
-# Создайте пользователя: useradd --system --no-create-home --shell /bin/false dnr
-# И раскомментируйте следующие строки:
-# User=dnr
-# Group=dnr
-User=root
-Group=root
-
-# Примечание: Порт 53 требует прав root или CAP_NET_BIND_SERVICE.
-# В этом примере используется порт 5353. Вы можете изменить его при необходимости.
-ExecStart=/usr/local/bin/DNR -p 5353
-Restart=on-failure
-
-# Конфигурация логирования
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=dnr
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Перезагрузка конфигурации systemd для распознавания нового сервиса
+# 7. Перезагрузка демона systemd
+echo "[6/6] Перезагрузка демона systemd для применения нового сервиса..."
 systemctl daemon-reload
 
 echo
-echo "--- Установка завершена! ---"
+echo "--- Установка успешно завершена! ---"
 echo
-echo "Бинарный файл 'DNR' был установлен в /usr/local/bin/DNR"
-echo "Файл сервиса systemd был создан в /etc/systemd/system/dnr.service"
+echo "Что дальше?"
 echo
-echo "Для управления сервисом вы можете использовать следующие команды:"
-echo "  sudo systemctl start dnr.service    # Запустить сервис"
-echo "  sudo systemctl enable dnr.service   # Включить автозапуск при загрузке системы"
-echo "  sudo systemctl status dnr.service   # Проверить статус сервиса"
-echo "  sudo systemctl stop dnr.service     # Остановить сервис"
-echo "  sudo journalctl -u dnr.service -f   # Просматривать логи в реальном времени"
+echo "1. Бинарный файл 'DNR' установлен в /usr/local/bin/DNR."
+echo "2. Файл сервиса 'dnr.service' установлен в /lib/systemd/system/."
+echo "   Вы можете изменить его, если нужно (например, поменять порт)."
 echo
-echo "По умолчанию сервис настроен на работу на порту 5353. Вы можете отредактировать файл сервиса, чтобы изменить порт или другие параметры."
+echo "3. Для управления сервисом используйте команды:"
+echo "   sudo systemctl start dnr       # Запустить сервис"
+echo "   sudo systemctl enable dnr      # Включить автозапуск при загрузке"
+echo "   sudo systemctl status dnr      # Проверить статус"
+echo "   sudo systemctl stop dnr        # Остановить сервис"
+echo
+echo "4. Для просмотра логов:"
+echo "   journalctl -u dnr -f"
+echo
