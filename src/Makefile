@@ -246,6 +246,7 @@ sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
 sysconfdir = ${prefix}/etc
+systemdsystemunitdir = /lib/systemd/system
 target_alias =
 top_build_prefix = ../
 top_builddir = ..

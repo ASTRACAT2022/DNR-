@@ -26,5 +26,12 @@ AC_TYPE_UINT32_T
 # Checks for library functions.
 AC_CHECK_FUNCS([clock_gettime inet_ntoa memset select socket strchr])
 
+# Add option for systemd service directory
+AC_ARG_WITH([systemdsystemunitdir],
+  [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files])],
+  [systemdsystemunitdir="$withval"],
+  [systemdsystemunitdir="/lib/systemd/system"])
+AC_SUBST([systemdsystemunitdir])
+
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

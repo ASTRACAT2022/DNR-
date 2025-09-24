@@ -1,0 +1,27 @@
+[Unit]
+Description=ASTRACAT DNR Recursive DNS Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=@prefix@/bin/DNR -p 53 -b 0.0.0.0
+Restart=on-failure
+User=root
+Group=root
+
+# Security settings
+# It is recommended to run as a non-privileged user.
+# 1. Create the user:
+#    useradd --system --no-create-home --shell /bin/false dnr
+# 2. Uncomment the following lines and comment out User=root and Group=root
+# User=dnr
+# Group=dnr
+# 3. If you want to use port 53, grant the necessary capability:
+#    setcap 'cap_net_bind_service=+ep' @prefix@/bin/DNR
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dnr
+
+[Install]
+WantedBy=multi-user.target
