@@ -59,8 +59,43 @@ make
 echo "[5/6] Запуск 'make install' для установки бинарного файла и сервиса..."
 make install
 
-# 7. Перезагрузка демона systemd
+# 7. Проверка и исправление dnr.service
 echo "[6/6] Перезагрузка демона systemd для применения нового сервиса..."
+
+# Путь к исполняемому файлу
+BIN_PATH="/usr/local/bin/DNR"
+
+# Путь к сервисному файлу
+SERVICE_PATH="/lib/systemd/system/dnr.service"
+
+# Проверка существования файла
+if [ ! -f "$BIN_PATH" ]; then
+    echo "Ошибка: Бинарный файл не найден по пути $BIN_PATH"
+    exit 1
+fi
+
+# Проверка существования сервисного файла
+if [ ! -f "$SERVICE_PATH" ]; then
+    echo "Ошибка: Сервисный файл не найден по пути $SERVICE_PATH"
+    exit 1
+fi
+
+# Исправление пути в dnr.service
+echo "[7/6] Исправление пути в dnr.service..."
+
+# Удаляем старые строки и добавляем правильный ExecStart
+sed -i 's/^ExecStart=.*/ExecStart='"$BIN_PATH"'/' "$SERVICE_PATH"
+
+# Добавляем User и Group, если не указаны
+if ! grep -q "^User=" "$SERVICE_PATH"; then
+    sed -i '1i User=root' "$SERVICE_PATH"
+fi
+
+if ! grep -q "^Group=" "$SERVICE_PATH"; then
+    sed -i '1i Group=root' "$SERVICE_PATH"
+fi
+
+# Перезагрузка демона systemd
 systemctl daemon-reload
 
 echo
@@ -68,8 +103,8 @@ echo "--- Установка успешно завершена! ---"
 echo
 echo "Что дальше?"
 echo
-echo "1. Бинарный файл 'DNR' установлен в /usr/local/bin/DNR."
-echo "2. Файл сервиса 'dnr.service' установлен в /lib/systemd/system/."
+echo "1. Бинарный файл 'DNR' установлен в $BIN_PATH."
+echo "2. Файл сервиса 'dnr.service' установлен в $SERVICE_PATH."
 echo "   Вы можете изменить его, если нужно (например, поменять порт)."
 echo
 echo "3. Для управления сервисом используйте команды:"
@@ -80,4 +115,3 @@ echo "   sudo systemctl stop dnr        # Остановить сервис"
 echo
 echo "4. Для просмотра логов:"
 echo "   journalctl -u dnr -f"
-echo
