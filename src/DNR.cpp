@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <list>
 #include <set>
@@ -40,15 +41,29 @@ struct statistic_enrty {
 	unsigned int cache_max;
 };
 bool operator<(const sockaddr_in& a, const sockaddr_in& b) {
-	return a.sin_addr.s_addr < b.sin_addr.s_addr;
+	if (a.sin_addr.s_addr != b.sin_addr.s_addr) return a.sin_addr.s_addr < b.sin_addr.s_addr;
+	return a.sin_port < b.sin_port;
 };
+
+bool operator==(const sockaddr_in& a, const sockaddr_in& b) {
+    return a.sin_addr.s_addr == b.sin_addr.s_addr && a.sin_port == b.sin_port;
+}
+
+namespace std {
+    template <>
+    struct hash<sockaddr_in> {
+        size_t operator()(const sockaddr_in& s) const {
+            return std::hash<uint32_t>()(s.sin_addr.s_addr) ^ (std::hash<uint16_t>()(s.sin_port) << 1);
+        }
+    };
+}
 bool operator<(const timespec& a, const timespec& b) {
 	if (a.tv_sec != b.tv_sec) return a.tv_sec < b.tv_sec;
 	return a.tv_nsec < b.tv_nsec;
 };
 struct ns_list {
 	std::string scope;
-	std::map<sockaddr_in, unsigned short> addrs;
+	std::unordered_map<sockaddr_in, unsigned short> addrs;
 };
 struct question_entry {
 	std::string qname;
@@ -70,6 +85,18 @@ struct question_entry {
 		return !(*this == rhs);
 	}
 };
+
+namespace std {
+    template <>
+    struct hash<question_entry> {
+        size_t operator()(const question_entry& q) const {
+            size_t h1 = hash<string>()(q.qname);
+            size_t h2 = hash<unsigned short>()(q.qtype);
+            size_t h3 = hash<unsigned short>()(q.qclass);
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
+        }
+    };
+}
 struct resource_entry {
 	question_entry rq;
 	time_t rexpiry;
@@ -107,14 +134,14 @@ struct request_entry {
 	unsigned int retry;
 	std::vector<resource_entry> anrr;
 	std::list<remote_source> rlist;
-	std::map<question_entry, local_source> llist;
+	std::unordered_map<question_entry, local_source> llist;
 	bool use_cache;
 	unsigned short client_payload_size;
 	unsigned short rcode;
 };
-std::map<question_entry, cache_entry> cache_map;
+std::unordered_map<question_entry, cache_entry> cache_map;
 std::map<time_t, std::set<cache_entry*> > cache_expiry_map;
-std::map<question_entry, request_entry> request_map;
+std::unordered_map<question_entry, request_entry> request_map;
 std::map<time_t, std::set<request_entry*> > request_expiry_map;
 std::map<timespec, std::set<request_entry*> > query_expiry_map;
 unsigned char sendbuf[NS_PACKETSZ];
@@ -128,9 +155,8 @@ int lfd = -1;
 int rfd = -1;
 timespec now = {0,0};
 // options - значения по умолчанию
-bool dnssec_enabled = false; // По умолчанию DNSSEC отключен
 in_addr bind_address = { INADDR_ANY }; // Используем значение по умолчанию
-unsigned short bind_port = 53; // Значение по умолчанию, может быть изменено через -p
+unsigned short bind_port = 5099; // Значение по умолчанию, может быть изменено через -p
 // Остальные настройки используют значения по умолчанию из оригинального кода
 std::vector<std::string> custom_root; // Не используется, так как опция -r отсутствует
 time_t cache_update_ttl = 180;
@@ -149,7 +175,7 @@ long long timespec_diff(const timespec& a, const timespec& b); // return millise
 bool create_socket(int& fd, sockaddr_in* addr);
 void init_root();
 void handle_signal(int signal);
-bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scope, std::map<question_entry, cache_entry>& entries, unsigned short& rrtype);
+bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scope, std::unordered_map<question_entry, cache_entry>& entries, unsigned short& rrtype);
 void handle_response(ns_msg& handle, const sockaddr_in& addr);
 bool add_request(const question_entry& question, const question_entry* oq, unsigned int progress, const sockaddr_in* addr, const in_addr* local_addr, unsigned int ifindex, unsigned short id,  bool do_bit, bool rd_bit, bool need_answer, bool use_cache, request_entry*& pentry);
 void handle_request(ns_msg& handle, const sockaddr_in& addr, const in_addr& local_addr, unsigned int ifindex);
@@ -168,7 +194,7 @@ void print_help() {
 	printf("AstracatDNR - Simple recursive DNS server\n");
 	printf("Usage: fastdns [-p port] [-h]\n");
 	printf("Options:\n");
-	printf("  -p port     Port to listen on (default: 53)\n");
+	printf("  -p port     Port to listen on (default: 5099)\n");
 	printf("  -h          Show this help message\n");
 }
 void handle_signal(int signal) {
@@ -346,7 +372,7 @@ void init_root() {
 	addr.sin_addr.s_addr = inet_addr("202.12.27.33");	root_addrs.addrs.insert(std::make_pair(addr, 0));
 	// Добавьте больше серверов по необходимости
 }
-bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scope, std::map<question_entry, cache_entry>& entries, unsigned short& rrtype) {
+bool add_response_cache_entry(ns_msg& handle, ns_rr& rr, const std::string& scope, std::unordered_map<question_entry, cache_entry>& entries, unsigned short& rrtype) {
 	char domain_name[MAXDNAME];
 	resource_entry r;
 	r.rq.qname = ns_rr_name(rr);
@@ -418,7 +444,7 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr) {
 	unsigned short rcode;
 	unsigned short id;
 	unsigned short rrtype;
-	std::map<question_entry, cache_entry> entries;
+	std::unordered_map<question_entry, cache_entry> entries;
 	ss.rx_response++;
 	if (ns_parserr(&handle, ns_s_qd, 0, &rr) < 0) {
 		// Уровень детализации удален
@@ -487,7 +513,7 @@ void handle_response(ns_msg& handle, const sockaddr_in& addr) {
 	}
 	bool no_more_data = no_soa == false || (no_ns && no_answer);
 	bool no_domain = rcode == NXDOMAIN;
-	for (std::map<question_entry, cache_entry>::iterator it = entries.begin(); it != entries.end(); ++it) {
+	for (std::unordered_map<question_entry, cache_entry>::iterator it = entries.begin(); it != entries.end(); ++it) {
 		// find the least expiry time;
 		cache_entry& tmp_cache = it->second;
 		tmp_cache.least_expiry = 0;
@@ -642,7 +668,7 @@ void handle_packet(msghdr *msg, int size, bool local) {
 bool get_answer(question_entry& question, std::vector<resource_entry>& rr, bool use_cache) {
 	bool walking = true;
 	while (walking) {
-		std::map<question_entry, cache_entry>::iterator it = cache_map.find(question);
+		std::unordered_map<question_entry, cache_entry>::iterator it = cache_map.find(question);
 		if (it != cache_map.end() && (use_cache || it->second.least_expiry > now.tv_sec + cache_update_ttl)) { // found answer
 			if (it->second.last_use) it->second.last_use = now.tv_sec;
 			rr.insert(rr.end(), it->second.rrs.begin(), it->second.rrs.end());
@@ -745,7 +771,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 		// this resquest should be an orphan by now
 		request.progress++;
 		// copy llist to stack
-		std::map<question_entry, local_source> tmp_llist;
+		std::unordered_map<question_entry, local_source> tmp_llist;
 		// clear request.llist to avoid recursion
 		tmp_llist.swap(request.llist);
 		// callback first
@@ -764,7 +790,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			if (it == request.rlist.begin()) build_packet(false, (request.rcode != ns_r_noerror) ? request.rcode : (no_domain ? NXDOMAIN : NOERROR), request.question, &request.anrr, adrrc, request.client_payload_size, it->do_bit, it->rd_bit);
 			send_packet(it->addr, it->id, &(it->local_addr), it->ifindex, true);
 		}
-		for (std::map<question_entry, local_source>::iterator it = tmp_llist.begin(); it != tmp_llist.end(); ++it) {
+		for (std::unordered_map<question_entry, local_source>::iterator it = tmp_llist.begin(); it != tmp_llist.end(); ++it) {
 			local_source& ls = it->second;
 			assert(ls.oq != request.question); // llist won't contain itself, since we already checked that when adding request
 			if (request_map.count(ls.oq) == 0) continue;
@@ -836,7 +862,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 		question_entry nsq;
 		nsq.qclass = C_IN;
 		nsq.qtype = T_A;
-		std::map<question_entry, unsigned int> reqs;
+		std::unordered_map<question_entry, unsigned int> reqs;
 		for (std::set<std::string>::iterator it = ns_with_no_addr.begin(); it != ns_with_no_addr.end(); ++it) {
 			nsq.qname = *it;
 			if (nsq == request.question) continue;
@@ -852,7 +878,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 			}
 			if (add_request(nsq, &request.question, request.progress, NULL, NULL, 0, 0, new_do_bit, new_rd_bit, false, true, pentry)) reqs[nsq] = pentry->progress;
 		}
-		for (std::map<question_entry, unsigned int>::iterator it = reqs.begin(); it != reqs.end(); ++it) {
+		for (std::unordered_map<question_entry, unsigned int>::iterator it = reqs.begin(); it != reqs.end(); ++it) {
 			if (request_map.count(it->first) == 0) continue;
 			if (request_map[it->first].progress != it->second) continue;
 			try_complete_request(request_map[it->first], false, false, request_map[it->first].progress);
@@ -1004,13 +1030,13 @@ void build_packet(bool query, unsigned short rcode, const question_entry& questi
 		ph->arcount = htons((i > (int)anrr->size() - adrrc) ? i + adrrc - anrr->size() : 0);
 	}
 	// Add EDNS0 OPT record if needed
-	if ((query && dnssec_enabled) || (!query && client_payload_size > 512)) {
+	if ((!query && client_payload_size > 512)) {
 		if (psend - pspos >= 11) { // 1 byte for root domain, 10 for OPT record
 			*pspos++ = 0; // Root domain
 			ns_put16(ns_t_opt, pspos); pspos += 2;
 			if (query) {
 				ns_put16(TX_BUFF_SIZE, pspos); pspos += 2; // UDP payload size
-				ns_put32(dnssec_enabled ? 0x80000000 : 0, pspos); pspos += 4; // DO bit
+				ns_put32(0, pspos); pspos += 4; // DO bit
 			} else {
 				ns_put16(client_payload_size, pspos); pspos += 2; // Client payload size
 				ns_put32(do_bit ? 0x80000000 : 0, pspos); pspos += 4; // DO bit
@@ -1049,7 +1075,7 @@ void check_expiry() {
 		assert(r->retry < query_retry);
 		ss.query_retry++;
 		build_packet(true, NOERROR, r->question, NULL, 0, 0, false, true);
-		for (std::map<sockaddr_in, unsigned short>::iterator its = r->ns.addrs.begin(); its != r->ns.addrs.end(); ++its) {
+		for (std::unordered_map<sockaddr_in, unsigned short>::iterator its = r->ns.addrs.begin(); its != r->ns.addrs.end(); ++its) {
 			ss.tx_query++;
 			// Уровень детализации удален
 			// if (verbose >= 2) syslog(LOG_DEBUG, "Resend query for request(%d) %s, %d, %d", r->progress, r->question.qname.c_str(), r->question.qclass, r->question.qtype);
@@ -1083,7 +1109,7 @@ void check_expiry() {
 			// if (verbose >= 3) syslog(LOG_DEBUG, "Refresh cache(%d) %s, %d, %d", (int)(centry->least_expiry - now.tv_sec), centry->question.qname.c_str(), centry->question.qclass, centry->question.qtype);
 			centry->last_update = now.tv_sec;
 			request_entry* rentry;
-			if (add_request(centry->question, NULL, 0, NULL, NULL, 0, 0, dnssec_enabled, true, false, false, rentry)) try_complete_request(*rentry, false, false, rentry->progress);
+			if (add_request(centry->question, NULL, 0, NULL, NULL, 0, 0, false, true, false, false, rentry)) try_complete_request(*rentry, false, false, rentry->progress);
 		}
 		if (it->first <= now.tv_sec) cache_expiry_map.erase(it++);
 		else ++it;
