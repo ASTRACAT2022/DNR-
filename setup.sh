@@ -60,42 +60,35 @@ echo "[5/6] Запуск 'make install' для установки бинарно
 make install
 
 # 7. Проверка и исправление dnr.service
-echo "[6/6] Перезагрузка демона systemd для применения нового сервиса..."
+echo "[6/6] Настройка и перезагрузка systemd..."
 
-# Путь к исполняемому файлу
 BIN_PATH="/usr/local/bin/DNR"
-
-# Путь к сервисному файлу
 SERVICE_PATH="/lib/systemd/system/dnr.service"
 
-# Проверка существования файла
 if [ ! -f "$BIN_PATH" ]; then
-    echo "Ошибка: Бинарный файл не найден по пути $BIN_PATH"
+    echo "Ошибка: Бинарный файл не найден по пути $BIN_PATH" >&2
     exit 1
 fi
 
-# Проверка существования сервисного файла
 if [ ! -f "$SERVICE_PATH" ]; then
-    echo "Ошибка: Сервисный файл не найден по пути $SERVICE_PATH"
+    echo "Ошибка: Сервисный файл не найден по пути $SERVICE_PATH" >&2
     exit 1
 fi
 
-# Исправление пути в dnr.service
-echo "[7/6] Исправление пути в dnr.service..."
+# Заменяем путь к исполняемому файлу
+# Используем # в качестве разделителя, чтобы избежать конфликтов с /
+sed -i "s#^ExecStart=.*#ExecStart=${BIN_PATH} -p 53#" "$SERVICE_PATH"
 
-# Используем # в качестве разделителя, чтобы избежать конфликта с / в пути
-sed -i "s#^ExecStart=.*#ExecStart=${BIN_PATH}#" "$SERVICE_PATH"
-
-# Добавляем User и Group, если не указаны
+# Добавляем User=root и Group=root в секцию [Service], если их нет
+# Это гарантирует, что сервис запускается с нужными правами
 if ! grep -q "^User=" "$SERVICE_PATH"; then
-    sed -i '1i User=root' "$SERVICE_PATH"
+    sed -i '/^\[Service\]/a User=root' "$SERVICE_PATH"
 fi
-
 if ! grep -q "^Group=" "$SERVICE_PATH"; then
-    sed -i '1i Group=root' "$SERVICE_PATH"
+    sed -i '/^\[Service\]/a Group=root' "$SERVICE_PATH"
 fi
 
-# Перезагрузка демона systemd
+# Перезагружаем конфигурацию systemd
 systemctl daemon-reload
 
 echo
