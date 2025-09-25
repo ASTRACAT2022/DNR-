@@ -1,3 +1,4 @@
 bin_PROGRAMS=DNR
 DNR_SOURCES=DNR.cpp
+DNR_LDADD = -lunbound
 
