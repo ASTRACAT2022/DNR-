@@ -841,7 +841,7 @@ bool try_complete_request(request_entry& request, bool no_more_data, bool no_dom
 		}
 			build_packet(true, NOERROR, request.question, NULL, 0, 0, false, true);
 		bool update_lastsend = false;
-		for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+		for (auto it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
 			if (request.ns.addrs.count(it->first) != 0) continue;
 			update_lastsend = true;
 			request.ns.addrs[it->first] = rand();
@@ -1075,7 +1075,7 @@ void check_expiry() {
 		assert(r->retry < query_retry);
 		ss.query_retry++;
 		build_packet(true, NOERROR, r->question, NULL, 0, 0, false, true);
-		for (std::unordered_map<sockaddr_in, unsigned short>::iterator its = r->ns.addrs.begin(); its != r->ns.addrs.end(); ++its) {
+		for (auto its = r->ns.addrs.begin(); its != r->ns.addrs.end(); ++its) {
 			ss.tx_query++;
 			// Уровень детализации удален
 			// if (verbose >= 2) syslog(LOG_DEBUG, "Resend query for request(%d) %s, %d, %d", r->progress, r->question.qname.c_str(), r->question.qclass, r->question.qtype);

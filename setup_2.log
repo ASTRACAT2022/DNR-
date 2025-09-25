@@ -1,0 +1,164 @@
+--- Автоматический установщик ASTRACAT DNR ---
+Этот скрипт установит зависимости, соберет и установит DNS-сервер.
+[1/6] Определение пакетного менеджера и установка зависимостей...
+Hit:1 http://us-central1.gce.archive.ubuntu.com/ubuntu noble InRelease
+Hit:2 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:3 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-backports InRelease
+Hit:4 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security InRelease
+Hit:5 https://download.docker.com/linux/ubuntu noble InRelease
+Hit:6 https://ppa.launchpadcontent.net/git-core/ppa/ubuntu noble InRelease
+Reading package lists...
+Используется команда: apt-get install -y build-essential autoconf automake libtool
+Reading package lists...
+Building dependency tree...
+Reading state information...
+build-essential is already the newest version (12.10ubuntu1).
+autoconf is already the newest version (2.71-3).
+automake is already the newest version (1:1.16.5-1.3ubuntu1).
+libtool is already the newest version (2.4.7-7build1).
+The following packages were automatically installed and are no longer required:
+  bridge-utils dns-root-data dnsmasq-base netcat-openbsd ubuntu-fan
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 64 not upgraded.
+[2/6] Запуск autoreconf для генерации сборочных скриптов...
+Making distclean in src
+make[1]: Entering directory '/app/src'
+test -z "DNR" || rm -f DNR
+rm -f *.o
+rm -f *.tab.c
+test -z "" || rm -f
+test . = "." || test -z "" || rm -f
+rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+rm -f ./.deps/DNR.Po
+rm -f Makefile
+make[1]: Leaving directory '/app/src'
+make[1]: Entering directory '/app'
+test -z "" || rm -f
+test . = "." || test -z "" || rm -f
+rm -f config.h stamp-h1
+rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+rm -f cscope.out cscope.in.out cscope.po.out cscope.files
+make[1]: Leaving directory '/app'
+rm -f config.status config.cache config.log configure.lineno config.status.lineno
+rm -f Makefile
+autoreconf: export WARNINGS=
+autoreconf: Entering directory '.'
+autoreconf: configure.ac: not using Gettext
+autoreconf: running: aclocal --force
+autoreconf: configure.ac: tracing
+autoreconf: configure.ac: not using Libtool
+autoreconf: configure.ac: not using Intltool
+autoreconf: configure.ac: not using Gtkdoc
+autoreconf: running: /usr/bin/autoconf --force
+autoreconf: running: /usr/bin/autoheader --force
+autoreconf: running: automake --add-missing --copy --force-missing
+autoreconf: Leaving directory '.'
+[3/6] Запуск ./configure для настройки проекта...
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for a race-free mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking for g++... g++
+checking whether the C++ compiler works... yes
+checking for C++ compiler default output file name... a.out
+checking for suffix of executables...
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C++... yes
+checking whether g++ accepts -g... yes
+checking for g++ option to enable C++11 features... none needed
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of g++... gcc3
+checking for gcc... gcc
+checking whether the compiler supports GNU C... yes
+checking whether gcc accepts -g... yes
+checking for gcc option to enable C11 features... none needed
+checking whether gcc understands -c and -o together... yes
+checking dependency style of gcc... gcc3
+checking for ns_name_uncompress in -lresolv... yes
+checking for clock_gettime in -lrt... yes
+checking for sys/types.h... yes
+checking for netinet/in.h... yes
+checking for arpa/nameser.h... yes
+checking for netdb.h... yes
+checking for resolv.h... yes
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... (cached) yes
+checking for unistd.h... yes
+checking for arpa/inet.h... yes
+checking for fcntl.h... yes
+checking for memory.h... yes
+checking for sys/socket.h... yes
+checking for syslog.h... yes
+checking for unistd.h... (cached) yes
+checking for _Bool... yes
+checking for stdbool.h that conforms to C99... yes
+checking for size_t... yes
+checking for uint32_t... yes
+checking for clock_gettime... yes
+checking for inet_ntoa... yes
+checking for memset... yes
+checking for select... yes
+checking for socket... yes
+checking for strchr... yes
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating src/Makefile
+config.status: creating config.h
+config.status: executing depfiles commands
+[4/6] Запуск make для компиляции...
+make  all-recursive
+make[1]: Entering directory '/app'
+Making all in src
+make[2]: Entering directory '/app/src'
+g++ -DHAVE_CONFIG_H -I. -I..     -g -O2 -MT DNR.o -MD -MP -MF .deps/DNR.Tpo -c -o DNR.o DNR.cpp
+mv -f .deps/DNR.Tpo .deps/DNR.Po
+g++  -g -O2   -o DNR DNR.o  -lrt -lresolv
+make[2]: Leaving directory '/app/src'
+make[2]: Entering directory '/app'
+make[2]: Leaving directory '/app'
+make[1]: Leaving directory '/app'
+[5/6] Запуск 'make install' для установки бинарного файла и сервиса...
+Making install in src
+make[1]: Entering directory '/app/src'
+make[2]: Entering directory '/app/src'
+ /usr/bin/mkdir -p '/usr/local/bin'
+  /usr/bin/install -c DNR '/usr/local/bin'
+make[2]: Nothing to be done for 'install-data-am'.
+make[2]: Leaving directory '/app/src'
+make[1]: Leaving directory '/app/src'
+make[1]: Entering directory '/app'
+make[2]: Entering directory '/app'
+make[2]: Nothing to be done for 'install-exec-am'.
+ /usr/bin/mkdir -p '/lib/systemd/system'
+ /usr/bin/install -c -m 644 dnr.service '/lib/systemd/system'
+make[2]: Leaving directory '/app'
+make[1]: Leaving directory '/app'
+[6/6] Перезагрузка демона systemd для применения нового сервиса...
+[7/6] Исправление пути в dnr.service...
+
+--- Установка успешно завершена! ---
+
+Что дальше?
+
+1. Бинарный файл 'DNR' установлен в /usr/local/bin/DNR.
+2. Файл сервиса 'dnr.service' установлен в /lib/systemd/system/dnr.service.
+   Вы можете изменить его, если нужно (например, поменять порт).
+
+3. Для управления сервисом используйте команды:
+   sudo systemctl start dnr       # Запустить сервис
+   sudo systemctl enable dnr      # Включить автозапуск при загрузке
+   sudo systemctl status dnr      # Проверить статус
+   sudo systemctl stop dnr        # Остановить сервис
+
+4. Для просмотра логов:
+   journalctl -u dnr -f
