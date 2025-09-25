@@ -101,7 +101,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_DNR_OBJECTS = DNR.$(OBJEXT)
 DNR_OBJECTS = $(am_DNR_OBJECTS)
-DNR_LDADD = $(LDADD)
+DNR_DEPENDENCIES =
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -252,6 +252,7 @@ top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
 DNR_SOURCES = DNR.cpp
+DNR_LDADD = -lunbound
 all: all-am
 
 .SUFFIXES:
