@@ -1,0 +1,418 @@
+--- Автоматический установщик ASTRACAT DNR ---
+Этот скрипт установит зависимости, соберет и установит DNS-сервер.
+[1/6] Определение пакетного менеджера и установка зависимостей...
+Hit:1 http://us-central1.gce.archive.ubuntu.com/ubuntu noble InRelease
+Get:2 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+Get:3 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+Get:4 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+Get:5 https://download.docker.com/linux/ubuntu noble InRelease [48.8 kB]
+Get:6 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1828 kB]
+Get:7 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [236 kB]
+Get:8 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1922 kB]
+Get:9 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [521 kB]
+Get:10 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [2483 kB]
+Get:11 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Components [159 B]
+Get:12 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [38.9 kB]
+Get:13 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [887 B]
+Get:14 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [7804 B]
+Get:15 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [35.6 kB]
+Get:16 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [21.5 kB]
+Get:17 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-backports/restricted amd64 Components [160 B]
+Get:18 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Components [161 B]
+Get:19 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1465 kB]
+Get:20 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [24.8 kB]
+Get:21 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1136 kB]
+Get:22 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [65.5 kB]
+Get:23 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [2356 kB]
+Get:24 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Components [157 B]
+Get:25 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [34.6 kB]
+Get:26 http://us-central1.gce.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Components [158 B]
+Get:27 https://ppa.launchpadcontent.net/git-core/ppa/ubuntu noble InRelease [24.3 kB]
+Get:28 https://download.docker.com/linux/ubuntu noble/stable amd64 Packages [36.6 kB]
+Get:29 https://ppa.launchpadcontent.net/git-core/ppa/ubuntu noble/main amd64 Packages [2990 B]
+Fetched 12.7 MB in 2s (8001 kB/s)
+Reading package lists...
+Используется команда: apt-get install -y build-essential autoconf automake libtool
+Reading package lists...
+Building dependency tree...
+Reading state information...
+build-essential is already the newest version (12.10ubuntu1).
+autoconf is already the newest version (2.71-3).
+automake is already the newest version (1:1.16.5-1.3ubuntu1).
+libtool is already the newest version (2.4.7-7build1).
+The following packages were automatically installed and are no longer required:
+  bridge-utils dns-root-data dnsmasq-base netcat-openbsd ubuntu-fan
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 64 not upgraded.
+[2/6] Запуск autoreconf для генерации сборочных скриптов...
+/bin/bash ./config.status --recheck
+running CONFIG_SHELL=/bin/bash /bin/bash ./configure --no-create --no-recursion
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for a race-free mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking for g++... g++
+checking whether the C++ compiler works... yes
+checking for C++ compiler default output file name... a.out
+checking for suffix of executables...
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C++... yes
+checking whether g++ accepts -g... yes
+checking for g++ option to enable C++11 features... none needed
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of g++... gcc3
+checking for gcc... gcc
+checking whether the compiler supports GNU C... yes
+checking whether gcc accepts -g... yes
+checking for gcc option to enable C11 features... none needed
+checking whether gcc understands -c and -o together... yes
+checking dependency style of gcc... gcc3
+checking for ns_name_uncompress in -lresolv... yes
+checking for clock_gettime in -lrt... yes
+checking for sys/types.h... yes
+checking for netinet/in.h... yes
+checking for arpa/nameser.h... yes
+checking for netdb.h... yes
+checking for resolv.h... yes
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... (cached) yes
+checking for unistd.h... yes
+checking for arpa/inet.h... yes
+checking for fcntl.h... yes
+checking for memory.h... yes
+checking for sys/socket.h... yes
+checking for syslog.h... yes
+checking for unistd.h... (cached) yes
+checking for _Bool... yes
+checking for stdbool.h that conforms to C99... yes
+checking for size_t... yes
+checking for uint32_t... yes
+checking for clock_gettime... yes
+checking for inet_ntoa... yes
+checking for memset... yes
+checking for select... yes
+checking for socket... yes
+checking for strchr... yes
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+ /bin/bash ./config.status
+config.status: creating Makefile
+config.status: creating src/Makefile
+config.status: creating config.h
+config.status: config.h is unchanged
+config.status: executing depfiles commands
+Making distclean in src
+make[1]: Entering directory '/app/src'
+test -z "DNR" || rm -f DNR
+rm -f *.o
+rm -f *.tab.c
+test -z "" || rm -f
+test . = "." || test -z "" || rm -f
+rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+rm -f ./.deps/DNR.Po
+rm -f Makefile
+make[1]: Leaving directory '/app/src'
+make[1]: Entering directory '/app'
+test -z "" || rm -f
+test . = "." || test -z "" || rm -f
+rm -f config.h stamp-h1
+rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+rm -f cscope.out cscope.in.out cscope.po.out cscope.files
+make[1]: Leaving directory '/app'
+rm -f config.status config.cache config.log configure.lineno config.status.lineno
+rm -f Makefile
+autoreconf: export WARNINGS=
+autoreconf: Entering directory '.'
+autoreconf: configure.ac: not using Gettext
+autoreconf: running: aclocal --force
+autoreconf: configure.ac: tracing
+autoreconf: configure.ac: not using Libtool
+autoreconf: configure.ac: not using Intltool
+autoreconf: configure.ac: not using Gtkdoc
+autoreconf: running: /usr/bin/autoconf --force
+autoreconf: running: /usr/bin/autoheader --force
+autoreconf: running: automake --add-missing --copy --force-missing
+autoreconf: Leaving directory '.'
+[3/6] Запуск ./configure для настройки проекта...
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for a race-free mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking for g++... g++
+checking whether the C++ compiler works... yes
+checking for C++ compiler default output file name... a.out
+checking for suffix of executables...
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C++... yes
+checking whether g++ accepts -g... yes
+checking for g++ option to enable C++11 features... none needed
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of g++... gcc3
+checking for gcc... gcc
+checking whether the compiler supports GNU C... yes
+checking whether gcc accepts -g... yes
+checking for gcc option to enable C11 features... none needed
+checking whether gcc understands -c and -o together... yes
+checking dependency style of gcc... gcc3
+checking for ns_name_uncompress in -lresolv... yes
+checking for clock_gettime in -lrt... yes
+checking for sys/types.h... yes
+checking for netinet/in.h... yes
+checking for arpa/nameser.h... yes
+checking for netdb.h... yes
+checking for resolv.h... yes
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... (cached) yes
+checking for unistd.h... yes
+checking for arpa/inet.h... yes
+checking for fcntl.h... yes
+checking for memory.h... yes
+checking for sys/socket.h... yes
+checking for syslog.h... yes
+checking for unistd.h... (cached) yes
+checking for _Bool... yes
+checking for stdbool.h that conforms to C99... yes
+checking for size_t... yes
+checking for uint32_t... yes
+checking for clock_gettime... yes
+checking for inet_ntoa... yes
+checking for memset... yes
+checking for select... yes
+checking for socket... yes
+checking for strchr... yes
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating src/Makefile
+config.status: creating config.h
+config.status: executing depfiles commands
+[4/6] Запуск make для компиляции...
+make  all-recursive
+make[1]: Entering directory '/app'
+Making all in src
+make[2]: Entering directory '/app/src'
+g++ -DHAVE_CONFIG_H -I. -I..     -g -O2 -MT DNR.o -MD -MP -MF .deps/DNR.Tpo -c -o DNR.o DNR.cpp
+DNR.cpp: In function ‘bool try_complete_request(request_entry&, bool, bool, unsigned int)’:
+DNR.cpp:844:95: error: conversion from ‘std::unordered_map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::__detail::_Insert_base<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::allocator<std::pair<const sockaddr_in, short unsigned int> >, std::__detail::_Select1st, std::equal_to<sockaddr_in>, std::hash<sockaddr_in>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::iterator’} to non-scalar type ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} requested
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                           ~~~~~~~~~~~~~~~~~~~~^~
+DNR.cpp:844:102: error: no match for ‘operator!=’ (operand types are ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} and ‘std::unordered_map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::__detail::_Insert_base<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::allocator<std::pair<const sockaddr_in, short unsigned int> >, std::__detail::_Select1st, std::equal_to<sockaddr_in>, std::hash<sockaddr_in>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::iterator’})
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                   ~~ ^~ ~~~~~~~~~~~~~~~~~~~~
+      |                                                                                                   |                       |
+      |                                                                                                   |                       std::unordered_map<sockaddr_in, short unsigned int>::iterator {aka std::__detail::_Insert_base<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::allocator<std::pair<const sockaddr_in, short unsigned int> >, std::__detail::_Select1st, std::equal_to<sockaddr_in>, std::hash<sockaddr_in>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::iterator}
+      |                                                                                                   std::map<sockaddr_in, short unsigned int>::iterator {aka std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator}
+In file included from /usr/include/c++/13/bits/stl_algobase.h:64,
+                 from /usr/include/c++/13/bits/stl_tree.h:63,
+                 from /usr/include/c++/13/map:62,
+                 from DNR.cpp:15:
+/usr/include/c++/13/bits/stl_pair.h:842:5: note: candidate: ‘template<class _T1, class _T2> constexpr bool std::operator!=(const pair<_T1, _T2>&, const pair<_T1, _T2>&)’
+  842 |     operator!=(const pair<_T1, _T2>& __x, const pair<_T1, _T2>& __y)
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_pair.h:842:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::pair<_T1, _T2>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/bits/stl_algobase.h:67:
+/usr/include/c++/13/bits/stl_iterator.h:462:5: note: candidate: ‘template<class _Iterator> constexpr bool std::operator!=(const reverse_iterator<_Iterator>&, const reverse_iterator<_Iterator>&)’
+  462 |     operator!=(const reverse_iterator<_Iterator>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_iterator.h:462:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::reverse_iterator<_Iterator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/stl_iterator.h:507:5: note: candidate: ‘template<class _IteratorL, class _IteratorR> constexpr bool std::operator!=(const reverse_iterator<_Iterator>&, const reverse_iterator<_IteratorR>&)’
+  507 |     operator!=(const reverse_iterator<_IteratorL>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_iterator.h:507:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::reverse_iterator<_Iterator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/stl_iterator.h:1697:5: note: candidate: ‘template<class _IteratorL, class _IteratorR> constexpr bool std::operator!=(const move_iterator<_IteratorL>&, const move_iterator<_IteratorR>&)’
+ 1697 |     operator!=(const move_iterator<_IteratorL>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_iterator.h:1697:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::move_iterator<_IteratorL>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/stl_iterator.h:1763:5: note: candidate: ‘template<class _Iterator> constexpr bool std::operator!=(const move_iterator<_IteratorL>&, const move_iterator<_IteratorL>&)’
+ 1763 |     operator!=(const move_iterator<_Iterator>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_iterator.h:1763:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::move_iterator<_IteratorL>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/bits/stl_tree.h:64:
+/usr/include/c++/13/bits/allocator.h:245:5: note: candidate: ‘template<class _T1, class _T2> bool std::operator!=(const allocator<_Tp1>&, const allocator<_T2>&)’
+  245 |     operator!=(const allocator<_T1>&, const allocator<_T2>&)
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/allocator.h:245:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::allocator<_Tp1>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/bits/stl_map.h:63,
+                 from /usr/include/c++/13/map:63:
+/usr/include/c++/13/tuple:1974:5: note: candidate: ‘template<class ... _TElements, class ... _UElements> constexpr bool std::operator!=(const tuple<_Args1 ...>&, const tuple<_Args2 ...>&)’
+ 1974 |     operator!=(const tuple<_TElements...>& __t,
+      |     ^~~~~~~~
+/usr/include/c++/13/tuple:1974:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::tuple<_Args1 ...>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/stl_map.h:1558:5: note: candidate: ‘template<class _Key, class _Tp, class _Compare, class _Alloc> bool std::operator!=(const map<_Key, _Tp, _Compare, _Allocator>&, const map<_Key, _Tp, _Compare, _Allocator>&)’
+ 1558 |     operator!=(const map<_Key, _Tp, _Compare, _Alloc>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_map.h:1558:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::map<_Key, _Tp, _Compare, _Allocator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/map:64:
+/usr/include/c++/13/bits/stl_multimap.h:1179:5: note: candidate: ‘template<class _Key, class _Tp, class _Compare, class _Alloc> bool std::operator!=(const multimap<_Key, _Tp, _Compare, _Allocator>&, const multimap<_Key, _Tp, _Compare, _Allocator>&)’
+ 1179 |     operator!=(const multimap<_Key, _Tp, _Compare, _Alloc>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_multimap.h:1179:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::multimap<_Key, _Tp, _Compare, _Allocator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/unordered_map:41,
+                 from DNR.cpp:16:
+/usr/include/c++/13/bits/unordered_map.h:2150:5: note: candidate: ‘template<class _Key, class _Tp, class _Hash, class _Pred, class _Alloc> bool std::operator!=(const unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&, const unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&)’
+ 2150 |     operator!=(const unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/unordered_map.h:2150:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/unordered_map.h:2164:5: note: candidate: ‘template<class _Key, class _Tp, class _Hash, class _Pred, class _Alloc> bool std::operator!=(const unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&, const unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&)’
+ 2164 |     operator!=(const unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/unordered_map.h:2164:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/vector:66,
+                 from DNR.cpp:17:
+/usr/include/c++/13/bits/stl_vector.h:2086:5: note: candidate: ‘template<class _Tp, class _Alloc> bool std::operator!=(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&)’
+ 2086 |     operator!=(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_vector.h:2086:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::vector<_Tp, _Alloc>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/list:65,
+                 from DNR.cpp:18:
+/usr/include/c++/13/bits/stl_list.h:2188:5: note: candidate: ‘template<class _Tp, class _Alloc> bool std::operator!=(const __cxx11::list<_Tp, _Alloc>&, const __cxx11::list<_Tp, _Alloc>&)’
+ 2188 |     operator!=(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_list.h:2188:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::__cxx11::list<_Tp, _Alloc>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/set:63,
+                 from DNR.cpp:19:
+/usr/include/c++/13/bits/stl_set.h:1032:5: note: candidate: ‘template<class _Key, class _Compare, class _Alloc> bool std::operator!=(const set<_Key, _Compare, _Allocator>&, const set<_Key, _Compare, _Allocator>&)’
+ 1032 |     operator!=(const set<_Key, _Compare, _Alloc>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_set.h:1032:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::set<_Key, _Compare, _Allocator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/set:64:
+/usr/include/c++/13/bits/stl_multiset.h:1018:5: note: candidate: ‘template<class _Key, class _Compare, class _Alloc> bool std::operator!=(const multiset<_Key, _Compare, _Allocator>&, const multiset<_Key, _Compare, _Allocator>&)’
+ 1018 |     operator!=(const multiset<_Key, _Compare, _Alloc>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/stl_multiset.h:1018:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::multiset<_Key, _Compare, _Allocator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/bits/char_traits.h:42,
+                 from /usr/include/c++/13/string:42,
+                 from DNR.cpp:20:
+/usr/include/c++/13/bits/postypes.h:197:5: note: candidate: ‘template<class _StateT> bool std::operator!=(const fpos<_StateT>&, const fpos<_StateT>&)’
+  197 |     operator!=(const fpos<_StateT>& __lhs, const fpos<_StateT>& __rhs)
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/postypes.h:197:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::fpos<_StateT>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+In file included from /usr/include/c++/13/bits/basic_string.h:47,
+                 from /usr/include/c++/13/string:54:
+/usr/include/c++/13/string_view:649:5: note: candidate: ‘template<class _CharT, class _Traits> constexpr bool std::operator!=(basic_string_view<_CharT, _Traits>, basic_string_view<_CharT, _Traits>)’
+  649 |     operator!=(basic_string_view<_CharT, _Traits> __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/string_view:649:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::_Rb_tree_iterator<std::pair<const sockaddr_in, short unsigned int> >’ is not derived from ‘std::basic_string_view<_CharT, _Traits>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/string_view:656:5: note: candidate: ‘template<class _CharT, class _Traits> constexpr bool std::operator!=(basic_string_view<_CharT, _Traits>, __type_identity_t<basic_string_view<_CharT, _Traits> >)’
+  656 |     operator!=(basic_string_view<_CharT, _Traits> __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/string_view:656:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::_Rb_tree_iterator<std::pair<const sockaddr_in, short unsigned int> >’ is not derived from ‘std::basic_string_view<_CharT, _Traits>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/string_view:664:5: note: candidate: ‘template<class _CharT, class _Traits> constexpr bool std::operator!=(__type_identity_t<basic_string_view<_CharT, _Traits> >, basic_string_view<_CharT, _Traits>)’
+  664 |     operator!=(__type_identity_t<basic_string_view<_CharT, _Traits>> __x,
+      |     ^~~~~~~~
+/usr/include/c++/13/string_view:664:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::__detail::_Node_iterator<std::pair<const sockaddr_in, short unsigned int>, false, true>’ is not derived from ‘std::basic_string_view<_CharT, _Traits>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/basic_string.h:3788:5: note: candidate: ‘template<class _CharT, class _Traits, class _Alloc> bool std::operator!=(const __cxx11::basic_string<_CharT, _Traits, _Allocator>&, const __cxx11::basic_string<_CharT, _Traits, _Allocator>&)’
+ 3788 |     operator!=(const basic_string<_CharT, _Traits, _Alloc>& __lhs,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/basic_string.h:3788:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::__cxx11::basic_string<_CharT, _Traits, _Allocator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/basic_string.h:3802:5: note: candidate: ‘template<class _CharT, class _Traits, class _Alloc> bool std::operator!=(const _CharT*, const __cxx11::basic_string<_CharT, _Traits, _Allocator>&)’
+ 3802 |     operator!=(const _CharT* __lhs,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/basic_string.h:3802:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   mismatched types ‘const _CharT*’ and ‘std::_Rb_tree_iterator<std::pair<const sockaddr_in, short unsigned int> >’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/basic_string.h:3815:5: note: candidate: ‘template<class _CharT, class _Traits, class _Alloc> bool std::operator!=(const __cxx11::basic_string<_CharT, _Traits, _Allocator>&, const _CharT*)’
+ 3815 |     operator!=(const basic_string<_CharT, _Traits, _Alloc>& __lhs,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/basic_string.h:3815:5: note:   template argument deduction/substitution failed:
+DNR.cpp:844:124: note:   ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} is not derived from ‘const std::__cxx11::basic_string<_CharT, _Traits, _Allocator>’
+  844 |                 for (std::map<sockaddr_in, unsigned short>::iterator it = new_list.addrs.begin(); it != new_list.addrs.end(); ++it) {
+      |                                                                                                                            ^
+/usr/include/c++/13/bits/stl_tree.h:320:7: note: candidate: ‘bool std::operator!=(const _Rb_tree_iterator<pair<const sockaddr_in, short unsigned int> >::_Self&, const _Rb_tree_iterator<pair<const sockaddr_in, short unsigned int> >::_Self&)’
+  320 |       operator!=(const _Self& __x, const _Self& __y) _GLIBCXX_NOEXCEPT
+      |       ^~~~~~~~
+/usr/include/c++/13/bits/stl_tree.h:320:49: note:   no known conversion for argument 2 from ‘std::unordered_map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::__detail::_Insert_base<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::allocator<std::pair<const sockaddr_in, short unsigned int> >, std::__detail::_Select1st, std::equal_to<sockaddr_in>, std::hash<sockaddr_in>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::iterator’} to ‘const std::_Rb_tree_iterator<std::pair<const sockaddr_in, short unsigned int> >::_Self&’
+  320 |       operator!=(const _Self& __x, const _Self& __y) _GLIBCXX_NOEXCEPT
+      |                                    ~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/13/bits/hashtable.h:35,
+                 from /usr/include/c++/13/bits/unordered_map.h:33:
+/usr/include/c++/13/bits/hashtable_policy.h:407:7: note: candidate: ‘bool std::__detail::operator!=(const _Node_iterator_base<std::pair<const sockaddr_in, short unsigned int>, true>&, const _Node_iterator_base<std::pair<const sockaddr_in, short unsigned int>, true>&)’
+  407 |       operator!=(const _Node_iterator_base& __x, const _Node_iterator_base& __y)
+      |       ^~~~~~~~
+/usr/include/c++/13/bits/hashtable_policy.h:407:45: note:   no known conversion for argument 1 from ‘std::map<sockaddr_in, short unsigned int>::iterator’ {aka ‘std::_Rb_tree<sockaddr_in, std::pair<const sockaddr_in, short unsigned int>, std::_Select1st<std::pair<const sockaddr_in, short unsigned int> >, std::less<sockaddr_in>, std::allocator<std::pair<const sockaddr_in, short unsigned int> > >::iterator’} to ‘const std::__detail::_Node_iterator_base<std::pair<const sockaddr_in, short unsigned int>, true>&’
+  407 |       operator!=(const _Node_iterator_base& __x, const _Node_iterator_base& __y)
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+make[2]: *** [Makefile:350: DNR.o] Error 1
+make[2]: Leaving directory '/app/src'
+make[1]: *** [Makefile:407: all-recursive] Error 1
+make[1]: Leaving directory '/app'
+make: *** [Makefile:327: all] Error 2
